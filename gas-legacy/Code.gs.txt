@@ -1,0 +1,554 @@
+/*** Code.gs — Virgo ACP Branch Transfer Tracker ("IMS System") *****************
+ * Consolidated server file: entry point + auth + all API functions.
+ *
+ * Single-page web app: doGet() serves Javascript.html, which pulls in
+ * Stylesheet.html via include(). The validated session (or null) is injected
+ * into the page; the client renders the correct view for the user's role.
+ *
+ * Authorization is enforced server-side here via requireRole(), using the
+ * Supabase service_role key (RLS is bypassed by design — GAS is the access
+ * control layer). Credentials live in this project's Script Properties:
+ *   SUPABASE_URL, SUPABASE_SERVICE_KEY.
+ ******************************************************************************/
+
+/* ============================================================================
+   ENTRY POINT
+   ========================================================================== */
+
+function doGet(e) {
+  var token = (e && e.parameter && e.parameter.token) || '';
+  var session = getValidSession(token);
+
+  var t = HtmlService.createTemplateFromFile('Javascript');
+  // Injected into the page. sessionJson is a raw JSON literal ('null' when
+  // logged out); token is only exposed when the session is valid.
+  t.sessionJson = session ? JSON.stringify(session) : 'null';
+  t.token = session ? token : '';
+
+  return t.evaluate()
+    .setTitle('Virgo ACP - Branch Transfer Tracker')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function include(fileName) {
+  return HtmlService.createHtmlOutputFromFile(fileName).getContent();
+}
+
+function getScriptUrl() {
+  return ScriptApp.getService().getUrl();
+}
+
+
+/* ============================================================================
+   SUPABASE HELPERS
+   ========================================================================== */
+
+function _supabaseHeaders() {
+  var props = PropertiesService.getScriptProperties();
+  return {
+    'apikey': props.getProperty('SUPABASE_SERVICE_KEY'),
+    'Authorization': 'Bearer ' + props.getProperty('SUPABASE_SERVICE_KEY'),
+    'Content-Type': 'application/json'
+  };
+}
+
+function _supabaseUrl() {
+  return PropertiesService.getScriptProperties().getProperty('SUPABASE_URL');
+}
+
+
+/* ============================================================================
+   AUTH
+   ========================================================================== */
+
+var SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+var MAX_LOGIN_ATTEMPTS = 5;
+var LOCKOUT_MS = 15 * 60 * 1000;
+
+function _hashPassword(password) {
+  var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password, Utilities.Charset.UTF_8);
+  return digest.map(function (byte) {
+    var v = (byte < 0 ? byte + 256 : byte).toString(16);
+    return v.length === 1 ? '0' + v : v;
+  }).join('');
+}
+
+function login(username, password) {
+  username = (username || '').trim().toLowerCase();
+  if (!username || !password) {
+    return { success: false, message: 'Username and password are required.' };
+  }
+
+  var lockKey = 'lock_' + username;
+  var props = PropertiesService.getScriptProperties();
+  var lockData = props.getProperty(lockKey);
+  if (lockData) {
+    var lock = JSON.parse(lockData);
+    if (lock.count >= MAX_LOGIN_ATTEMPTS && (Date.now() - lock.lastAttempt) < LOCKOUT_MS) {
+      return { success: false, message: 'Too many failed attempts. Try again in 15 minutes.' };
+    }
+  }
+
+  var response = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/user_profiles?username=eq.' + encodeURIComponent(username) + '&select=*',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+
+  if (response.getResponseCode() !== 200) {
+    return { success: false, message: 'Login temporarily unavailable. Try again shortly.' };
+  }
+
+  var rows = JSON.parse(response.getContentText());
+  var user = rows[0];
+
+  if (!user || !user.active || _hashPassword(password) !== user.password_hash) {
+    _recordFailedAttempt(lockKey, props);
+    return { success: false, message: 'Incorrect username or password.' };
+  }
+
+  props.deleteProperty(lockKey);
+
+  var token = Utilities.getUuid();
+  var sessionData = {
+    userId: user.id,
+    username: user.username,
+    fullName: user.full_name,
+    role: user.role,
+    branchCode: user.branch_code,
+    createdAt: Date.now()
+  };
+  props.setProperty('sess_' + token, JSON.stringify(sessionData));
+
+  return {
+    success: true,
+    token: token,
+    role: user.role,
+    redirectUrl: getScriptUrl() + '?token=' + token
+  };
+}
+
+function _recordFailedAttempt(lockKey, props) {
+  var lockData = props.getProperty(lockKey);
+  var lock = lockData ? JSON.parse(lockData) : { count: 0, lastAttempt: 0 };
+  lock.count += 1;
+  lock.lastAttempt = Date.now();
+  props.setProperty(lockKey, JSON.stringify(lock));
+}
+
+function getValidSession(token) {
+  if (!token) return null;
+  var props = PropertiesService.getScriptProperties();
+  var raw = props.getProperty('sess_' + token);
+  if (!raw) return null;
+
+  var session = JSON.parse(raw);
+  if (Date.now() - session.createdAt > SESSION_TTL_MS) {
+    props.deleteProperty('sess_' + token);
+    return null;
+  }
+  session.token = token;
+  return session;
+}
+
+function requireSession(token) {
+  var session = getValidSession(token);
+  if (!session) throw new Error('Session expired. Please log in again.');
+  return session;
+}
+
+function requireRole(token, allowedRoles) {
+  var session = requireSession(token);
+  if (allowedRoles.indexOf(session.role) === -1) {
+    throw new Error('Not authorized for this action.');
+  }
+  return session;
+}
+
+function logoutSession(token) {
+  PropertiesService.getScriptProperties().deleteProperty('sess_' + token);
+  return { success: true };
+}
+
+/**
+ * One-off bootstrap for the first SUPER_ADMIN account, before any UI exists.
+ * Fill in the placeholders, run once from the editor, confirm the log, then
+ * blank the password back to '' afterward.
+ */
+function createUser() {
+  var username = 'yourusername';
+  var password = '';
+  var fullName = 'Your Name';
+  var role = 'SUPER_ADMIN';
+  var branchCode = null;
+
+  if (!password) {
+    Logger.log('Set a password in the script before running this.');
+    return;
+  }
+
+  var payload = {
+    username: username.trim().toLowerCase(),
+    password_hash: _hashPassword(password),
+    full_name: fullName,
+    role: role,
+    branch_code: branchCode,
+    active: true
+  };
+
+  var response = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/user_profiles',
+    {
+      method: 'post',
+      headers: Object.assign({}, _supabaseHeaders(), { 'Prefer': 'return=representation' }),
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+
+  var code = response.getResponseCode();
+  if (code >= 300) {
+    Logger.log('Failed: ' + code + ' - ' + response.getContentText());
+  } else {
+    Logger.log('User created: ' + response.getContentText());
+  }
+}
+
+
+/* ============================================================================
+   API — BRANCH ROLE
+   ========================================================================== */
+
+function getBranchDashboard(token) {
+  var session = requireRole(token, ['BRANCH']);
+  var branchCode = session.branchCode;
+
+  if (!branchCode) {
+    throw new Error('Your account has no branch assigned. Contact your admin.');
+  }
+
+  var ledgerRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/stock_ledger?branch_code=eq.' + encodeURIComponent(branchCode) + '&select=*',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var ledgerRows = JSON.parse(ledgerRes.getContentText());
+  var ledger = ledgerRows[0] || null;
+
+  var transfersRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions'
+      + '?destination_branch_code=eq.' + encodeURIComponent(branchCode)
+      + '&order_type=eq.BRANCH-TRANSFER'
+      + '&status=eq.IN_TRANSIT'
+      + '&select=id,docnum,item_code,item_description,quantity,source_branch_code,doc_date,batch'
+      + '&order=doc_date.desc',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var transfers = JSON.parse(transfersRes.getContentText());
+
+  return {
+    branchCode: branchCode,
+    fullName: session.fullName,
+    ledger: ledger,
+    incomingTransfers: transfers
+  };
+}
+
+function markReceived(token, transactionId) {
+  var session = requireRole(token, ['BRANCH']);
+
+  var checkRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions?id=eq.' + transactionId + '&select=destination_branch_code,status',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var rows = JSON.parse(checkRes.getContentText());
+  var row = rows[0];
+
+  if (!row) {
+    throw new Error('Transfer not found.');
+  }
+  if (row.destination_branch_code !== session.branchCode) {
+    throw new Error('This transfer does not belong to your branch.');
+  }
+  if (row.status === 'RECEIVED') {
+    throw new Error('This transfer is already marked Received.');
+  }
+
+  var updateRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions?id=eq.' + transactionId,
+    {
+      method: 'patch',
+      headers: Object.assign({}, _supabaseHeaders(), { 'Prefer': 'return=minimal' }),
+      payload: JSON.stringify({
+        status: 'RECEIVED',
+        received_at: new Date().toISOString(),
+        received_by: session.userId
+      }),
+      muteHttpExceptions: true
+    }
+  );
+
+  if (updateRes.getResponseCode() >= 300) {
+    throw new Error('Failed to update: ' + updateRes.getContentText());
+  }
+
+  return { success: true };
+}
+
+
+/* ============================================================================
+   API — ADMIN / SUPER_ADMIN
+   ========================================================================== */
+
+function getAdminDashboard(token) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+
+  var ledgerRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/stock_ledger?select=*&order=branch_code.asc',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var branches = JSON.parse(ledgerRes.getContentText());
+
+  var transfersRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions'
+      + '?order_type=eq.BRANCH-TRANSFER'
+      + '&select=id,docnum,item_code,item_description,quantity,source_branch_code,destination_branch_code,status,doc_date,received_at'
+      + '&order=doc_date.desc'
+      + '&limit=200',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var transfers = JSON.parse(transfersRes.getContentText());
+
+  var inTransitCount = transfers.filter(function (t) { return t.status === 'IN_TRANSIT'; }).length;
+  var receivedCount = transfers.filter(function (t) { return t.status === 'RECEIVED'; }).length;
+
+  var needsTaggingRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions'
+      + '?order_type=eq.BRANCH-TRANSFER&destination_branch_code=is.null&select=id',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var needsTagging = JSON.parse(needsTaggingRes.getContentText());
+
+  return {
+    branches: branches,
+    transfers: transfers,
+    inTransitCount: inTransitCount,
+    receivedCount: receivedCount,
+    needsTaggingCount: needsTagging.length
+  };
+}
+
+function getAllUsers(token) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/user_profiles?select=id,username,full_name,role,branch_code,active&order=username.asc',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  return JSON.parse(res.getContentText());
+}
+
+function getAllBranches(token) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/branches?select=code,name,facility_type&order=name.asc',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  return JSON.parse(res.getContentText());
+}
+
+function createUserByAdmin(token, userData) {
+  var session = requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+
+  var role = userData.role;
+  if (session.role === 'ADMIN' && role !== 'BRANCH') {
+    throw new Error('Admins can only create Branch-role accounts. Contact a Super Admin for other roles.');
+  }
+  if (role === 'BRANCH' && !userData.branchCode) {
+    throw new Error('A branch must be selected for Branch-role accounts.');
+  }
+
+  var payload = {
+    username: (userData.username || '').trim().toLowerCase(),
+    password_hash: _hashPassword(userData.password),
+    full_name: userData.fullName,
+    role: role,
+    branch_code: (role === 'BRANCH') ? userData.branchCode : null,
+    active: true
+  };
+
+  if (!payload.username || !userData.password || !payload.full_name) {
+    throw new Error('Username, password, and full name are required.');
+  }
+
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/user_profiles',
+    {
+      method: 'post',
+      headers: Object.assign({}, _supabaseHeaders(), { 'Prefer': 'return=representation' }),
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+
+  if (res.getResponseCode() >= 300) {
+    var body = res.getContentText();
+    if (body.indexOf('duplicate key') !== -1) {
+      throw new Error('That username is already taken.');
+    }
+    throw new Error('Failed to create user: ' + body);
+  }
+
+  if (role === 'HOD' && session.role === 'SUPER_ADMIN' && userData.hodBranchCodes && userData.hodBranchCodes.length) {
+    var created = JSON.parse(res.getContentText())[0];
+    _assignHodBranches(created.id, userData.hodBranchCodes);
+  }
+
+  return { success: true };
+}
+
+function setUserActive(token, userId, active) {
+  var session = requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+
+  if (session.role === 'ADMIN') {
+    var checkRes = UrlFetchApp.fetch(
+      _supabaseUrl() + '/rest/v1/user_profiles?id=eq.' + userId + '&select=role',
+      { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+    );
+    var target = JSON.parse(checkRes.getContentText())[0];
+    if (!target || target.role !== 'BRANCH') {
+      throw new Error('Admins can only manage Branch-role accounts.');
+    }
+  }
+
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/user_profiles?id=eq.' + userId,
+    {
+      method: 'patch',
+      headers: Object.assign({}, _supabaseHeaders(), { 'Prefer': 'return=minimal' }),
+      payload: JSON.stringify({ active: active }),
+      muteHttpExceptions: true
+    }
+  );
+
+  if (res.getResponseCode() >= 300) throw new Error('Failed to update user.');
+  return { success: true };
+}
+
+
+/* ============================================================================
+   API — HOD ASSIGNMENTS & DASHBOARD
+   ========================================================================== */
+
+function _assignHodBranches(hodUserId, branchCodes) {
+  UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/hod_branch_assignments?hod_user_id=eq.' + hodUserId,
+    { method: 'delete', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+
+  var rows = branchCodes.map(function (code) {
+    return { hod_user_id: hodUserId, branch_code: code };
+  });
+
+  UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/hod_branch_assignments',
+    { method: 'post', headers: _supabaseHeaders(), payload: JSON.stringify(rows), muteHttpExceptions: true }
+  );
+}
+
+function assignHodBranches(token, hodUserId, branchCodes) {
+  requireRole(token, ['SUPER_ADMIN']);
+  _assignHodBranches(hodUserId, branchCodes);
+  return { success: true };
+}
+
+function getHodDashboard(token) {
+  var session = requireRole(token, ['HOD']);
+
+  var assignRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/hod_branch_assignments?hod_user_id=eq.' + session.userId + '&select=branch_code',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var assignments = JSON.parse(assignRes.getContentText());
+  var branchCodes = assignments.map(function (a) { return a.branch_code; });
+
+  if (branchCodes.length === 0) {
+    return { branches: [], transfers: [], noAssignments: true };
+  }
+
+  var inList = branchCodes.join(',');
+
+  var ledgerRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/stock_ledger?branch_code=in.(' + inList + ')&select=*&order=branch_code.asc',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var branches = JSON.parse(ledgerRes.getContentText());
+
+  var orFilter = 'or=(source_branch_code.in.(' + inList + '),destination_branch_code.in.(' + inList + '))';
+  var transfersRes = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions'
+      + '?order_type=eq.BRANCH-TRANSFER'
+      + '&' + orFilter
+      + '&select=id,docnum,item_code,item_description,quantity,source_branch_code,destination_branch_code,status,doc_date'
+      + '&order=doc_date.desc'
+      + '&limit=200',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var transfers = JSON.parse(transfersRes.getContentText());
+
+  return {
+    branches: branches,
+    transfers: transfers,
+    noAssignments: false
+  };
+}
+
+function getHodBranchAssignments(token, hodUserId) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/hod_branch_assignments?hod_user_id=eq.' + hodUserId + '&select=branch_code',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var rows = JSON.parse(res.getContentText());
+  return rows.map(function (r) { return r.branch_code; });
+}
+
+
+/* ============================================================================
+   API — NEEDS-TAGGING RESOLUTION
+   ========================================================================== */
+
+function getNeedsTaggingRows(token) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions'
+      + '?order_type=eq.BRANCH-TRANSFER&destination_branch_code=is.null'
+      + '&select=id,docnum,item_code,item_description,customer_name,quantity,source_branch_code,doc_date',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  return JSON.parse(res.getContentText());
+}
+
+function resolveDestination(token, transactionId, branchCode) {
+  requireRole(token, ['SUPER_ADMIN', 'ADMIN']);
+
+  var branchCheck = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/branches?code=eq.' + encodeURIComponent(branchCode) + '&select=code',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  var validBranch = JSON.parse(branchCheck.getContentText());
+  if (validBranch.length === 0) {
+    throw new Error('Not a recognized branch code.');
+  }
+
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/sales_transactions?id=eq.' + transactionId,
+    {
+      method: 'patch',
+      headers: Object.assign({}, _supabaseHeaders(), { 'Prefer': 'return=minimal' }),
+      payload: JSON.stringify({ destination_branch_code: branchCode }),
+      muteHttpExceptions: true
+    }
+  );
+
+  if (res.getResponseCode() >= 300) throw new Error('Failed to update: ' + res.getContentText());
+  return { success: true };
+}

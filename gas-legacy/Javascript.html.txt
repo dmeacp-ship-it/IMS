@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+
+<!-- ======================= LOGIN VIEW ======================= -->
+<div id="view-login" class="app-view" style="display:none;">
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="login-mark">VIRGO ACP</div>
+      <h1 class="login-title">Branch Transfer Tracker</h1>
+      <form id="login-form">
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" required autocomplete="username" autofocus>
+
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" required autocomplete="current-password">
+
+        <div class="error-text" id="login-error"></div>
+        <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= BRANCH VIEW ======================= -->
+<div id="view-branch" class="app-view" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
+      <span class="topbar-branch" id="br-branchLabel">—</span>
+    </div>
+    <div class="topbar-right">
+      <span class="role-pill">BRANCH</span>
+      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-value mono" id="br-runningBalance">—</div>
+        <div class="stat-label">Current stock (qty)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value mono" id="br-incomingCount">—</div>
+        <div class="stat-label">In-transit transfers</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>Incoming transfers</span></div>
+      <div id="br-tableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- ======================= ADMIN VIEW ======================= -->
+<div id="view-admin" class="app-view" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
+      <span class="topbar-branch">All branches</span>
+    </div>
+    <div class="topbar-right">
+      <span class="role-pill" id="ad-rolePill">ADMIN</span>
+      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-value mono" id="ad-totalBranches">—</div><div class="stat-label">Branches</div></div>
+      <div class="stat-card"><div class="stat-value mono" id="ad-inTransitCount">—</div><div class="stat-label">In transit</div></div>
+      <div class="stat-card"><div class="stat-value mono" id="ad-receivedCount">—</div><div class="stat-label">Received (last 200)</div></div>
+      <div class="stat-card"><div class="stat-value mono" id="ad-needsTaggingCount">—</div><div class="stat-label">Needs destination tagging</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>Branch stock balances</span></div>
+      <div id="ad-branchTableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="ad-taggingPanel" style="display:none;">
+      <div class="panel-header"><span>Needs destination tagging</span></div>
+      <div id="ad-taggingTableWrap"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>Recent branch transfers</span></div>
+      <div id="ad-transferTableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span>Users</span>
+        <button class="btn-primary btn-small" id="ad-addUserBtn">Add user</button>
+      </div>
+      <div id="ad-userTableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+  </main>
+
+  <div id="ad-addUserPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:10; max-height:80vh; overflow-y:auto;">
+    <div class="panel-header"><span id="ad-addUserPanelTitle">Add user</span></div>
+    <div style="padding:16px;">
+      <input type="hidden" id="ad-editUserId" value="">
+      <label>Username</label>
+      <input type="text" id="ad-newUsername">
+      <label>Full name</label>
+      <input type="text" id="ad-newFullName">
+      <label>Password</label>
+      <input type="text" id="ad-newPassword">
+      <label>Role</label>
+      <select id="ad-newRole">
+        <option value="BRANCH">Branch</option>
+        <option value="ADMIN">Admin (Super Admin only)</option>
+        <option value="HOD">HOD (Super Admin only)</option>
+      </select>
+      <div id="ad-branchFieldWrap">
+        <label>Branch</label>
+        <select id="ad-newBranchCode"></select>
+      </div>
+      <div id="ad-hodBranchFieldWrap" style="display:none;">
+        <label>Branches this HOD can view</label>
+        <div id="ad-hodBranchCheckboxes" style="max-height:160px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; margin-bottom:16px;"></div>
+      </div>
+      <div class="error-text" id="ad-addUserError"></div>
+      <button class="btn-primary" id="ad-submitUserBtn">Create user</button>
+      <button class="btn-ghost btn-small" id="ad-cancelUserBtn" style="margin-top:8px; width:100%;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= HOD VIEW ======================= -->
+<div id="view-hod" class="app-view" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
+      <span class="topbar-branch">Assigned branches</span>
+    </div>
+    <div class="topbar-right">
+      <span class="role-pill">HOD</span>
+      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="panel">
+      <div class="panel-header"><span>Branch stock balances</span></div>
+      <div id="hod-branchTableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>Branch transfers</span></div>
+      <div id="hod-transferTableWrap"><div class="loading-state">Loading…</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ===========================================================================
+   Session + token are injected server-side by doGet().
+   SESSION is null when logged out; TOKEN is only populated for a valid session.
+   =========================================================================== */
+var SESSION = <?!= sessionJson ?>;
+var TOKEN = "<?= token ?>";
+
+function getBaseUrl() { return window.location.href.split('?')[0]; }
+
+function logout() {
+  if (TOKEN) google.script.run.logoutSession(TOKEN);
+  window.top.location.href = getBaseUrl();
+}
+
+function showView(id) {
+  var views = document.querySelectorAll('.app-view');
+  for (var i = 0; i < views.length; i++) views[i].style.display = 'none';
+  document.getElementById(id).style.display = 'block';
+}
+
+/* ------------------------------- LOGIN ---------------------------------- */
+var Login = {
+  init: function () {
+    var form = document.getElementById('login-form');
+    var errorText = document.getElementById('login-error');
+    var loginBtn = document.getElementById('login-btn');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorText.textContent = '';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+
+      var username = document.getElementById('login-username').value.trim();
+      var password = document.getElementById('login-password').value;
+
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (result.success) {
+            window.top.location.href = result.redirectUrl;
+          } else {
+            errorText.textContent = result.message;
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign in';
+          }
+        })
+        .withFailureHandler(function () {
+          errorText.textContent = 'Something went wrong. Please try again.';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Sign in';
+        })
+        .login(username, password);
+    });
+  }
+};
+
+/* ------------------------------- BRANCH --------------------------------- */
+var BranchView = {
+  load: function () {
+    google.script.run
+      .withSuccessHandler(BranchView.render)
+      .withFailureHandler(function (err) {
+        document.getElementById('br-tableWrap').innerHTML =
+          '<div class="empty-state">' + (err.message || 'Failed to load. Please sign in again.') + '</div>';
+      })
+      .getBranchDashboard(TOKEN);
+  },
+
+  render: function (data) {
+    document.getElementById('br-branchLabel').textContent = data.branchCode;
+    document.getElementById('br-runningBalance').textContent =
+      data.ledger ? Math.round(data.ledger.running_balance).toLocaleString() : '—';
+    document.getElementById('br-incomingCount').textContent = data.incomingTransfers.length;
+
+    var wrap = document.getElementById('br-tableWrap');
+
+    if (data.incomingTransfers.length === 0) {
+      wrap.innerHTML = '<div class="empty-state">No transfers currently in transit to your branch.</div>';
+      return;
+    }
+
+    var rows = data.incomingTransfers.map(function (t) {
+      return '<tr data-id="' + t.id + '">'
+        + '<td class="mono">' + t.docnum + '</td>'
+        + '<td>' + t.item_description + '</td>'
+        + '<td class="mono">' + t.batch + '</td>'
+        + '<td class="mono">' + t.quantity + '</td>'
+        + '<td>' + t.source_branch_code + '</td>'
+        + '<td>' + t.doc_date + '</td>'
+        + '<td><span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span></td>'
+        + '<td><button class="btn-primary btn-small mark-received-btn" data-id="' + t.id + '">Mark Received</button></td>'
+        + '</tr>';
+    }).join('');
+
+    wrap.innerHTML =
+      '<table><thead><tr>'
+      + '<th>Docnum</th><th>Item</th><th>Batch</th><th>Qty</th><th>From</th><th>Date</th><th>Status</th><th></th>'
+      + '</tr></thead><tbody>' + rows + '</tbody></table>';
+
+    wrap.querySelectorAll('.mark-received-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        btn.disabled = true;
+        btn.textContent = 'Updating…';
+
+        google.script.run
+          .withSuccessHandler(function () { BranchView.load(); })
+          .withFailureHandler(function (err) {
+            alert(err.message || 'Failed to update.');
+            btn.disabled = false;
+            btn.textContent = 'Mark Received';
+          })
+          .markReceived(TOKEN, id);
+      });
+    });
+  }
+};
+
+/* -------------------------------- HOD ----------------------------------- */
+var HodView = {
+  load: function () {
+    google.script.run
+      .withSuccessHandler(HodView.render)
+      .withFailureHandler(function (err) {
+        document.getElementById('hod-branchTableWrap').innerHTML =
+          '<div class="empty-state">' + (err.message || 'Failed to load.') + '</div>';
+        document.getElementById('hod-transferTableWrap').innerHTML = '';
+      })
+      .getHodDashboard(TOKEN);
+  },
+
+  render: function (data) {
+    if (data.noAssignments) {
+      document.getElementById('hod-branchTableWrap').innerHTML =
+        '<div class="empty-state">No branches assigned to your account yet. Contact your Super Admin.</div>';
+      document.getElementById('hod-transferTableWrap').innerHTML = '';
+      return;
+    }
+
+    var branchRows = data.branches.map(function (b) {
+      return '<tr><td>' + b.branch_name + '</td><td class="mono">' + b.branch_code + '</td>'
+        + '<td class="mono"><strong>' + Math.round(b.running_balance) + '</strong></td></tr>';
+    }).join('');
+
+    document.getElementById('hod-branchTableWrap').innerHTML = data.branches.length === 0
+      ? '<div class="empty-state">No stock data for your assigned branches.</div>'
+      : '<table><thead><tr><th>Branch</th><th>Code</th><th>Current Balance</th></tr></thead><tbody>' + branchRows + '</tbody></table>';
+
+    var transferRows = data.transfers.map(function (t) {
+      var badge = t.status === 'RECEIVED'
+        ? '<span class="badge badge-received"><span class="badge-dot"></span>Received</span>'
+        : '<span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span>';
+      return '<tr><td class="mono">' + t.docnum + '</td><td>' + t.item_description + '</td>'
+        + '<td class="mono">' + t.quantity + '</td><td>' + t.source_branch_code + '</td>'
+        + '<td>' + (t.destination_branch_code || '—') + '</td><td>' + t.doc_date + '</td><td>' + badge + '</td></tr>';
+    }).join('');
+
+    document.getElementById('hod-transferTableWrap').innerHTML = data.transfers.length === 0
+      ? '<div class="empty-state">No transfers found for your assigned branches.</div>'
+      : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
+  }
+};
+
+/* ------------------------------- ADMIN ---------------------------------- */
+var AdminView = {
+  allBranches: [],
+
+  init: function () {
+    // Reflect the actual role on the pill (SUPER_ADMIN vs ADMIN).
+    if (SESSION && SESSION.role) {
+      document.getElementById('ad-rolePill').textContent =
+        SESSION.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN';
+    }
+
+    document.getElementById('ad-newRole').addEventListener('change', function () {
+      document.getElementById('ad-branchFieldWrap').style.display = (this.value === 'BRANCH') ? 'block' : 'none';
+      document.getElementById('ad-hodBranchFieldWrap').style.display = (this.value === 'HOD') ? 'block' : 'none';
+    });
+
+    document.getElementById('ad-addUserBtn').addEventListener('click', function () {
+      document.getElementById('ad-addUserPanelTitle').textContent = 'Add user';
+      document.getElementById('ad-editUserId').value = '';
+      document.getElementById('ad-newUsername').value = '';
+      document.getElementById('ad-newFullName').value = '';
+      document.getElementById('ad-newPassword').value = '';
+      document.getElementById('ad-newRole').value = 'BRANCH';
+      document.getElementById('ad-branchFieldWrap').style.display = 'block';
+      document.getElementById('ad-hodBranchFieldWrap').style.display = 'none';
+      document.getElementById('ad-addUserPanel').style.display = 'block';
+    });
+
+    document.getElementById('ad-cancelUserBtn').addEventListener('click', function () {
+      document.getElementById('ad-addUserPanel').style.display = 'none';
+    });
+
+    document.getElementById('ad-submitUserBtn').addEventListener('click', AdminView.submitUser);
+  },
+
+  loadAll: function () {
+    google.script.run.withSuccessHandler(AdminView.renderDashboard).withFailureHandler(AdminView.showError).getAdminDashboard(TOKEN);
+    google.script.run.withSuccessHandler(AdminView.renderUsers).withFailureHandler(AdminView.showError).getAllUsers(TOKEN);
+    google.script.run.withSuccessHandler(AdminView.renderTagging).withFailureHandler(AdminView.showError).getNeedsTaggingRows(TOKEN);
+    google.script.run.withSuccessHandler(function (branches) {
+      AdminView.allBranches = branches;
+      AdminView.populateBranchDropdown();
+      AdminView.populateHodCheckboxes();
+    }).withFailureHandler(AdminView.showError).getAllBranches(TOKEN);
+  },
+
+  showError: function (err) {
+    document.body.insertAdjacentHTML('afterbegin',
+      '<div class="empty-state" style="color:var(--danger)">' + (err.message || 'Something went wrong.') + '</div>');
+  },
+
+  renderDashboard: function (data) {
+    document.getElementById('ad-totalBranches').textContent = data.branches.length;
+    document.getElementById('ad-inTransitCount').textContent = data.inTransitCount;
+    document.getElementById('ad-receivedCount').textContent = data.receivedCount;
+    document.getElementById('ad-needsTaggingCount').textContent = data.needsTaggingCount;
+
+    var branchRows = data.branches.map(function (b) {
+      return '<tr><td>' + b.branch_name + '</td><td class="mono">' + b.branch_code + '</td>'
+        + '<td class="mono">' + Math.round(b.opening_qty) + '</td>'
+        + '<td class="mono">' + Math.round(b.received_in) + '</td>'
+        + '<td class="mono">' + Math.round(b.transferred_out) + '</td>'
+        + '<td class="mono">' + Math.round(b.sold_out) + '</td>'
+        + '<td class="mono"><strong>' + Math.round(b.running_balance) + '</strong></td></tr>';
+    }).join('');
+
+    document.getElementById('ad-branchTableWrap').innerHTML =
+      '<table><thead><tr><th>Branch</th><th>Code</th><th>Opening</th><th>Received In</th>'
+      + '<th>Transferred Out</th><th>Sold</th><th>Balance</th></tr></thead><tbody>' + branchRows + '</tbody></table>';
+
+    var transferRows = data.transfers.slice(0, 50).map(function (t) {
+      var badge = t.status === 'RECEIVED'
+        ? '<span class="badge badge-received"><span class="badge-dot"></span>Received</span>'
+        : '<span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span>';
+      return '<tr><td class="mono">' + t.docnum + '</td><td>' + t.item_description + '</td>'
+        + '<td class="mono">' + t.quantity + '</td><td>' + t.source_branch_code + '</td>'
+        + '<td>' + (t.destination_branch_code || '—') + '</td><td>' + t.doc_date + '</td><td>' + badge + '</td></tr>';
+    }).join('');
+
+    document.getElementById('ad-transferTableWrap').innerHTML = data.transfers.length === 0
+      ? '<div class="empty-state">No branch transfers found.</div>'
+      : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
+  },
+
+  renderTagging: function (rows) {
+    var panel = document.getElementById('ad-taggingPanel');
+    if (rows.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+
+    var branchOptions = AdminView.allBranches.map(function (b) {
+      return '<option value="' + b.code + '">' + b.name + '</option>';
+    }).join('');
+
+    var tableRows = rows.map(function (r) {
+      return '<tr data-id="' + r.id + '">'
+        + '<td class="mono">' + r.docnum + '</td>'
+        + '<td>' + r.item_description + '</td>'
+        + '<td>' + (r.customer_name || '—') + '</td>'
+        + '<td class="mono">' + r.quantity + '</td>'
+        + '<td>' + r.source_branch_code + '</td>'
+        + '<td><select class="tag-branch-select"><option value="">Select branch…</option>' + branchOptions + '</select></td>'
+        + '<td><button class="btn-primary btn-small tag-save-btn" data-id="' + r.id + '">Save</button></td>'
+        + '</tr>';
+    }).join('');
+
+    document.getElementById('ad-taggingTableWrap').innerHTML =
+      '<table><thead><tr><th>Docnum</th><th>Item</th><th>Customer</th><th>Qty</th><th>From</th><th>Assign destination</th><th></th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+
+    document.querySelectorAll('.tag-save-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        var row = btn.closest('tr');
+        var select = row.querySelector('.tag-branch-select');
+        var branchCode = select.value;
+        if (!branchCode) { alert('Choose a branch first.'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        google.script.run
+          .withSuccessHandler(function () { AdminView.loadAll(); })
+          .withFailureHandler(function (err) {
+            alert(err.message);
+            btn.disabled = false;
+            btn.textContent = 'Save';
+          })
+          .resolveDestination(TOKEN, id, branchCode);
+      });
+    });
+  },
+
+  renderUsers: function (users) {
+    var rows = users.map(function (u) {
+      var statusBtn = u.active
+        ? '<button class="btn-ghost btn-small toggle-active" data-id="' + u.id + '" data-active="false">Deactivate</button>'
+        : '<button class="btn-primary btn-small toggle-active" data-id="' + u.id + '" data-active="true">Activate</button>';
+      var editBtn = u.role === 'HOD'
+        ? '<button class="btn-ghost btn-small edit-hod-btn" data-id="' + u.id + '" data-name="' + u.username + '">Edit branches</button>'
+        : '';
+      return '<tr><td>' + u.username + '</td><td>' + u.full_name + '</td><td>' + u.role + '</td>'
+        + '<td>' + (u.branch_code || '—') + '</td>'
+        + '<td>' + (u.active ? '<span class="badge badge-received">Active</span>' : '<span class="badge" style="color:var(--text-dim);background:var(--surface-raised)">Inactive</span>') + '</td>'
+        + '<td>' + statusBtn + ' ' + editBtn + '</td></tr>';
+    }).join('');
+
+    document.getElementById('ad-userTableWrap').innerHTML =
+      '<table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Branch</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+
+    document.querySelectorAll('.toggle-active').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-id');
+        var active = btn.getAttribute('data-active') === 'true';
+        google.script.run.withSuccessHandler(function () {
+          google.script.run.withSuccessHandler(AdminView.renderUsers).getAllUsers(TOKEN);
+        }).withFailureHandler(function (err) { alert(err.message); }).setUserActive(TOKEN, id, active);
+      });
+    });
+
+    document.querySelectorAll('.edit-hod-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var hodUserId = btn.getAttribute('data-id');
+        google.script.run
+          .withSuccessHandler(function (assignedCodes) {
+            AdminView.openHodEditor(hodUserId, assignedCodes);
+          })
+          .withFailureHandler(function (err) { alert(err.message); })
+          .getHodBranchAssignments(TOKEN, hodUserId);
+      });
+    });
+  },
+
+  populateBranchDropdown: function () {
+    var select = document.getElementById('ad-newBranchCode');
+    select.innerHTML = AdminView.allBranches.map(function (b) {
+      return '<option value="' + b.code + '">' + b.name + '</option>';
+    }).join('');
+  },
+
+  populateHodCheckboxes: function (checkedCodes) {
+    checkedCodes = checkedCodes || [];
+    var wrap = document.getElementById('ad-hodBranchCheckboxes');
+    wrap.innerHTML = AdminView.allBranches.map(function (b) {
+      var checked = checkedCodes.indexOf(b.code) !== -1 ? 'checked' : '';
+      return '<label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px; color:var(--text);">'
+        + '<input type="checkbox" class="hod-branch-checkbox" value="' + b.code + '" ' + checked + '> ' + b.name + '</label>';
+    }).join('');
+  },
+
+  openHodEditor: function (hodUserId, assignedCodes) {
+    document.getElementById('ad-addUserPanelTitle').textContent = 'Edit HOD branches';
+    document.getElementById('ad-editUserId').value = hodUserId;
+    document.getElementById('ad-newUsername').style.display = 'none';
+    document.getElementById('ad-newFullName').style.display = 'none';
+    document.getElementById('ad-newPassword').style.display = 'none';
+    document.getElementById('ad-newRole').style.display = 'none';
+    document.getElementById('ad-branchFieldWrap').style.display = 'none';
+    document.getElementById('ad-hodBranchFieldWrap').style.display = 'block';
+    AdminView.populateHodCheckboxes(assignedCodes);
+    document.getElementById('ad-submitUserBtn').textContent = 'Save branches';
+    document.getElementById('ad-addUserPanel').style.display = 'block';
+  },
+
+  submitUser: function () {
+    var errBox = document.getElementById('ad-addUserError');
+    errBox.textContent = '';
+    var editId = document.getElementById('ad-editUserId').value;
+
+    if (editId) {
+      var codes = Array.from(document.querySelectorAll('.hod-branch-checkbox:checked')).map(function (cb) { return cb.value; });
+      google.script.run
+        .withSuccessHandler(function () {
+          AdminView.resetAddUserPanel();
+          AdminView.loadAll();
+        })
+        .withFailureHandler(function (err) { errBox.textContent = err.message; })
+        .assignHodBranches(TOKEN, editId, codes);
+      return;
+    }
+
+    var role = document.getElementById('ad-newRole').value;
+    var payload = {
+      username: document.getElementById('ad-newUsername').value,
+      fullName: document.getElementById('ad-newFullName').value,
+      password: document.getElementById('ad-newPassword').value,
+      role: role,
+      branchCode: document.getElementById('ad-newBranchCode').value,
+      hodBranchCodes: role === 'HOD'
+        ? Array.from(document.querySelectorAll('.hod-branch-checkbox:checked')).map(function (cb) { return cb.value; })
+        : []
+    };
+
+    google.script.run
+      .withSuccessHandler(function () {
+        AdminView.resetAddUserPanel();
+        AdminView.loadAll();
+      })
+      .withFailureHandler(function (err) { errBox.textContent = err.message; })
+      .createUserByAdmin(TOKEN, payload);
+  },
+
+  resetAddUserPanel: function () {
+    document.getElementById('ad-addUserPanel').style.display = 'none';
+    document.getElementById('ad-newUsername').style.display = 'block';
+    document.getElementById('ad-newFullName').style.display = 'block';
+    document.getElementById('ad-newPassword').style.display = 'block';
+    document.getElementById('ad-newRole').style.display = 'block';
+    document.getElementById('ad-submitUserBtn').textContent = 'Create user';
+    document.getElementById('ad-newUsername').value = '';
+    document.getElementById('ad-newFullName').value = '';
+    document.getElementById('ad-newPassword').value = '';
+  }
+};
+
+/* ------------------------------- BOOT ----------------------------------- */
+function boot() {
+  var logoutBtns = document.querySelectorAll('.logout-btn');
+  for (var i = 0; i < logoutBtns.length; i++) logoutBtns[i].addEventListener('click', logout);
+
+  if (!SESSION) {
+    showView('view-login');
+    Login.init();
+    return;
+  }
+
+  switch (SESSION.role) {
+    case 'BRANCH':
+      showView('view-branch');
+      BranchView.load();
+      break;
+    case 'SUPER_ADMIN':
+    case 'ADMIN':
+      showView('view-admin');
+      AdminView.init();
+      AdminView.loadAll();
+      break;
+    case 'HOD':
+      showView('view-hod');
+      HodView.load();
+      break;
+    default:
+      showView('view-login');
+      Login.init();
+  }
+}
+
+boot();
+</script>
+
+</body>
+</html>
