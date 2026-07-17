@@ -57,17 +57,53 @@ function wireSidebarToggles() {
   });
 }
 
-// Nav items scroll their target panel into view and mark themselves active.
+// Nav items switch pages: only content sections whose data-page matches the
+// clicked item are shown; everything else in that view's content is hidden.
 function wireSidebarNav() {
-  document.querySelectorAll('.sb-nav').forEach(function (nav) {
-    nav.querySelectorAll('.ni').forEach(function (item) {
-      item.addEventListener('click', function () {
-        nav.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('active'); });
-        item.classList.add('active');
-        var targetId = item.getAttribute('data-target');
-        var target = targetId && document.getElementById(targetId);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.app-view.shell').forEach(function (view) {
+    var nav = view.querySelector('.sb-nav');
+    if (!nav) return;
+    var items = nav.querySelectorAll('.ni');
+
+    function showPage(page) {
+      view.querySelectorAll('.content [data-page]').forEach(function (el) {
+        el.style.display = (el.getAttribute('data-page') === page) ? '' : 'none';
       });
+      var contentEl = view.querySelector('.content');
+      if (contentEl) contentEl.scrollTop = 0;
+    }
+
+    items.forEach(function (item) {
+      item.addEventListener('click', function () {
+        items.forEach(function (n) { n.classList.remove('active'); });
+        item.classList.add('active');
+        showPage(item.getAttribute('data-page'));
+      });
+    });
+
+    var active = nav.querySelector('.ni.active') || items[0];
+    if (active) showPage(active.getAttribute('data-page'));
+  });
+}
+
+/* ------------------------------- theme ----------------------------------- */
+function applyTheme(theme) {
+  document.body.classList.toggle('light', theme === 'light');
+  document.querySelectorAll('.theme-toggle i').forEach(function (ic) {
+    ic.className = theme === 'light' ? 'ph ph-moon' : 'ph ph-sun';
+  });
+}
+
+// Light is the default; the user's choice persists in localStorage.
+function initTheme() {
+  var theme = 'light';
+  try { theme = localStorage.getItem('ims_theme') || 'light'; } catch (e) { /* ignore */ }
+  applyTheme(theme);
+  document.querySelectorAll('.theme-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var next = document.body.classList.contains('light') ? 'dark' : 'light';
+      applyTheme(next);
+      try { localStorage.setItem('ims_theme', next); } catch (e) { /* ignore */ }
     });
   });
 }
@@ -527,12 +563,11 @@ var AdminView = {
   },
 
   renderTagging: function (rows) {
-    var panel = document.getElementById('ad-taggingPanel');
     if (rows.length === 0) {
-      panel.style.display = 'none';
+      document.getElementById('ad-taggingTableWrap').innerHTML =
+        '<div class="empty-state">No transfers need destination tagging right now.</div>';
       return;
     }
-    panel.style.display = 'block';
 
     var branchOptions = AdminView.allBranches.map(function (b) {
       return '<option value="' + b.code + '">' + b.name + '</option>';
@@ -693,6 +728,7 @@ var AdminView = {
 
 /* ------------------------------- BOOT ----------------------------------- */
 async function boot() {
+  initTheme();
   wireLogout();
   wireSidebarToggles();
   wireSidebarNav();

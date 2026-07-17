@@ -39,6 +39,9 @@
         <div id="loginErr"></div>
         <button type="submit" class="btn btn-primary" id="loginBtn">Sign in</button>
       </form>
+      <div class="login-theme">
+        <button type="button" class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
+      </div>
     </div>
   </div>
 </div>
@@ -57,9 +60,9 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-target="br-statRow"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
-          <div class="ni" data-target="br-panel"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
-          <div class="ni" data-target="br-ledgerPanel"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni active" data-page="overview"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
+          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
+          <div class="ni" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
         </nav>
       </div>
     </div>
@@ -82,12 +85,13 @@
         <span id="br-branchLabel">—</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
         <span class="role-pill">BRANCH</span>
       </div>
     </div>
 
     <div class="content">
-      <div class="stat-row" id="br-statRow">
+      <div class="stat-row" id="br-statRow" data-page="overview">
         <div class="stat-card">
           <div class="stat-value mono" id="br-incomingCount">—</div>
           <div class="stat-label">In-transit transfers</div>
@@ -98,12 +102,12 @@
         </div>
       </div>
 
-      <div class="panel" id="br-panel">
+      <div class="panel" id="br-panel" data-page="transfers">
         <div class="panel-header"><span>Incoming transfers</span></div>
         <div id="br-tableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="br-ledgerPanel">
+      <div class="panel" id="br-ledgerPanel" data-page="ledger">
         <div class="panel-header">
           <span>Stock ledger</span>
           <button class="btn btn-success btn-small" id="br-recordConversionBtn">Record conversion</button>
@@ -154,13 +158,13 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-target="ad-statRow"><i class="ph ph-gauge"></i><span class="ni-txt">Dashboard</span></div>
-          <div class="ni" data-target="ad-ledgerPanel"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-target="ad-openingPanel"><i class="ph ph-flag"></i><span class="ni-txt">Opening Stock</span></div>
-          <div class="ni" data-target="ad-conversionPanel"><i class="ph ph-scissors"></i><span class="ni-txt">Conversions</span></div>
-          <div class="ni" data-target="ad-taggingPanel"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
-          <div class="ni" data-target="ad-transferPanel"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
-          <div class="ni" data-target="ad-userPanel"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
+          <div class="ni active" data-page="dashboard"><i class="ph ph-gauge"></i><span class="ni-txt">Dashboard</span></div>
+          <div class="ni" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="opening"><i class="ph ph-flag"></i><span class="ni-txt">Opening Stock</span></div>
+          <div class="ni" data-page="conversions"><i class="ph ph-scissors"></i><span class="ni-txt">Conversions</span></div>
+          <div class="ni" data-page="tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
+          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+          <div class="ni" data-page="users"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
         </nav>
       </div>
     </div>
@@ -183,19 +187,20 @@
         <span>All branches</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
         <span class="role-pill" id="ad-rolePill">ADMIN</span>
       </div>
     </div>
 
     <div class="content">
-      <div class="stat-row" id="ad-statRow">
+      <div class="stat-row" id="ad-statRow" data-page="dashboard">
         <div class="stat-card"><div class="stat-value mono" id="ad-totalBranches">—</div><div class="stat-label">Branches</div></div>
         <div class="stat-card"><div class="stat-value mono" id="ad-inTransitCount">—</div><div class="stat-label">In transit</div></div>
         <div class="stat-card"><div class="stat-value mono" id="ad-receivedCount">—</div><div class="stat-label">Received (last 200)</div></div>
         <div class="stat-card"><div class="stat-value mono" id="ad-needsTaggingCount">—</div><div class="stat-label">Needs destination tagging</div></div>
       </div>
 
-      <div class="panel" id="ad-ledgerPanel">
+      <div class="panel" id="ad-ledgerPanel" data-page="ledger">
         <div class="panel-header"><span>Stock ledger — all branches</span></div>
         <div style="padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap;">
           <input type="text" id="ad-ledgerSearch" placeholder="Search FG code, item, or batch…" style="max-width:320px;">
@@ -204,7 +209,7 @@
         <div id="ad-ledgerTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="ad-openingPanel">
+      <div class="panel" id="ad-openingPanel" data-page="opening">
         <div class="panel-header"><span>Set / update opening stock</span></div>
         <div style="padding:16px; max-width:420px;">
           <label>Branch</label>
@@ -222,7 +227,7 @@
         </div>
       </div>
 
-      <div class="panel" id="ad-conversionPanel">
+      <div class="panel" id="ad-conversionPanel" data-page="conversions">
         <div class="panel-header"><span>Record conversion</span></div>
         <div style="padding:16px; max-width:480px;">
           <label>Branch</label>
@@ -248,17 +253,17 @@
         <div id="ad-conversionsTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="ad-taggingPanel" style="display:none;">
+      <div class="panel" id="ad-taggingPanel" data-page="tagging">
         <div class="panel-header"><span>Needs destination tagging</span></div>
-        <div id="ad-taggingTableWrap"></div>
+        <div id="ad-taggingTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="ad-transferPanel">
+      <div class="panel" id="ad-transferPanel" data-page="transfers">
         <div class="panel-header"><span>Recent branch transfers</span></div>
         <div id="ad-transferTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="ad-userPanel">
+      <div class="panel" id="ad-userPanel" data-page="users">
         <div class="panel-header">
           <span>Users</span>
           <button class="btn btn-primary btn-small" id="ad-addUserBtn">Add user</button>
@@ -313,8 +318,8 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-target="hod-ledgerPanel"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-target="hod-transferPanel"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+          <div class="ni active" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
         </nav>
       </div>
     </div>
@@ -337,12 +342,13 @@
         <span>Assigned branches</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
         <span class="role-pill">HOD</span>
       </div>
     </div>
 
     <div class="content">
-      <div class="panel" id="hod-ledgerPanel">
+      <div class="panel" id="hod-ledgerPanel" data-page="ledger">
         <div class="panel-header"><span>Stock ledger — assigned branches</span></div>
         <div style="padding:12px 16px;">
           <input type="text" id="hod-ledgerSearch" placeholder="Search FG code, item, or batch…" style="max-width:320px;">
@@ -350,7 +356,7 @@
         <div id="hod-ledgerTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
 
-      <div class="panel" id="hod-transferPanel">
+      <div class="panel" id="hod-transferPanel" data-page="transfers">
         <div class="panel-header"><span>Branch transfers</span></div>
         <div id="hod-transferTableWrap"><div class="loading-state">Loading…</div></div>
       </div>
