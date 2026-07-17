@@ -362,11 +362,11 @@
   .overlay.closing .modal { animation: modalOut 0.2s var(--ease-out) forwards; }
   @keyframes modalIn { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: none; } }
   @keyframes modalOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(16px) scale(0.97); } }
-  .modal-header { padding: var(--s-16) var(--s-24); background: color-mix(in srgb, var(--accent) 3%, transparent); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 10; }
+  .modal-header { padding: var(--s-24) var(--s-32); background: color-mix(in srgb, var(--accent) 3%, transparent); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 10; }
   .modal-ttl { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .modal-ttl i { font-size: 18px; color: var(--accentH); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: color-mix(in srgb, var(--accentH) 12%, transparent); }
-  .modal-body { flex: 1; overflow-y: auto; padding: var(--s-16) var(--s-24); background: transparent; }
-  .modal-foot { padding: var(--s-12) var(--s-24); background: transparent; border-top: 1px solid var(--border); display: flex; gap: var(--s-12); justify-content: flex-end; flex-shrink: 0; z-index: 10; }
+  .modal-body { flex: 1; overflow-y: auto; padding: var(--s-24) var(--s-32); background: transparent; }
+  .modal-foot { padding: var(--s-24) var(--s-32); background: transparent; border-top: 1px solid var(--border); display: flex; gap: var(--s-12); justify-content: flex-end; flex-shrink: 0; z-index: 10; }
 
   /* ── Dynamic Island Toasts ── */
   #toasts { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: var(--s-12); align-items: center; }
@@ -641,7 +641,7 @@
   .form-row { display: flex; flex-wrap: wrap; gap: var(--s-16); align-items: flex-end; margin-bottom: 6px; }
   .form-row > div { flex: 1 1 150px; margin-bottom: 0; }
   .form-row > div.grow { flex: 2 1 240px; }
-  .form-row > div.shrink { flex: 0 0 120px; }
+  .form-row > div.shrink { flex: 0 0 160px; }
   .form-row label { margin-bottom: 6px; }
   .form-row input, .form-row select { margin-bottom: 0; }
   .form-row .btn { flex: 0 0 auto; margin-bottom: 0; }
