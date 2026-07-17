@@ -290,7 +290,7 @@
   </div>
 
   <div id="ad-openingOverlay" class="overlay" style="display:none;">
-    <div class="modal large">
+    <div class="modal">
       <div class="modal-header">
         <div class="modal-ttl"><i class="ph ph-flag"></i>Opening stock</div>
       </div>
@@ -314,13 +314,15 @@
         <div class="panel" style="margin-bottom:0;">
           <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
           <div style="padding:16px 20px;">
-            <div class="form-row">
-              <div class="grow"><label>Branch</label><select id="ad-open-branch"></select></div>
-              <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-              <div class="shrink"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
-              <div class="shrink"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
-              <div class="shrink"><label>As of date</label><input type="date" id="ad-open-date"></div>
-              <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save</button>
+            <div class="form-grid">
+              <div class="full"><label>Branch</label><select id="ad-open-branch"></select></div>
+              <div class="full"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+              <div><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
+              <div><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
+              <div><label>As of date</label><input type="date" id="ad-open-date"></div>
+              <div style="display:flex; align-items:flex-end;">
+                <button class="btn btn-primary" id="ad-open-submit" style="width:100%;"><i class="ph ph-check"></i>Save entry</button>
+              </div>
             </div>
             <div class="error-text" id="ad-open-error"></div>
           </div>
@@ -338,9 +340,10 @@
         <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
       </div>
       <div class="modal-body">
-        <div class="form-row">
-          <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
-        </div>
+        <div style="max-width: 840px;">
+          <div class="form-row">
+            <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
+          </div>
         <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
         <div class="form-row">
           <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
@@ -357,6 +360,7 @@
           <div class="grow"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
         </div>
         <div class="error-text" id="ad-conv-error"></div>
+        </div>
         <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:16px;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
         <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
       </div>
