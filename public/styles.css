@@ -621,4 +621,81 @@
 
   /* Page-switch entrance */
   .page-anim { animation: contentIn 0.3s var(--ease-out) both; }
+
+  /* ═══════════════════════════════════════════════════════════
+     VISUAL IDENTITY — grounded in the subject: Virgo ACP fabricates
+     and distributes aluminum composite panels. The palette lives in
+     the oxide/alloy family (weathered coil-coating, brushed
+     aluminum) instead of a generic SaaS indigo-on-slate look. Type
+     is a 3-role system: Space Grotesque (brand/heading, used only at
+     true brand moments), IBM Plex Sans (UI workhorse), IBM Plex Mono
+     (data — quantities, codes, batches). Shape is a moderate,
+     engineered radius rather than pill-everything. The brand mark is
+     three offset panels — a stacked composite sheet, doubling as a
+     stock-ledger motif.
+  ═══════════════════════════════════════════════════════════ */
+
+  :root {
+    --font-display: 'Space Grotesque', var(--font-ui);
+    --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+    --r: 10px;
+  }
+
+  body:not(.light) {
+    --bg: #14171B; --surface: #1B1F24; --card: #20242A;
+    --border: rgba(237,235,230,0.08); --border2: rgba(237,235,230,0.16);
+    --text: #EDEBE6; --sub: #A8A399; --muted: #6E6A60;
+    --accent: #C1541E; --accentH: #D6672E;
+    --green: #4B8A63; --yellow: #B8923D; --orange: #C1751F;
+    --red: #B5432E; --purple: #8A6BAE; --pink: #B5567A;
+    --part: #6E9C9C; --teal: #5B8A8A;
+    --danger: var(--red); --text-dim: var(--sub); --surface-raised: var(--card);
+    --transit-bg: rgba(193,117,31,0.16); --received-bg: rgba(75,138,99,0.16);
+  }
+  body.light {
+    --bg: #F3F1EA; --surface: #FBFAF7; --card: #FFFFFF;
+    --border: rgba(32,29,24,0.09); --border2: rgba(32,29,24,0.16);
+    --text: #201D18; --sub: #6B665C; --muted: #A39D8F;
+    --accent: #B84D1B; --accentH: #9C4118;
+    --green: #3F6E52; --yellow: #A8781F; --orange: #B0691C;
+    --red: #A23B26; --purple: #7A5D96; --pink: #9C4A66;
+    --part: #3F6E6E; --teal: #3F6E6E;
+    --danger: var(--red); --text-dim: var(--sub); --surface-raised: var(--card);
+    --transit-bg: rgba(176,105,28,0.13); --received-bg: rgba(63,110,82,0.13);
+  }
+
+  h1, .login-ttl, .sb-name, .logo-txt h2 {
+    font-family: var(--font-display) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Moderate, engineered radius instead of pill-everything */
+  .btn { border-radius: var(--r) !important; }
+  input, select, textarea { border-radius: 8px !important; }
+  .stat-card, .panel, .modal, .login-box, .toast, .stat-ic-bubble { border-radius: var(--r); }
+  .role-pill, .badge, .rtag, .ni-bd, .av { border-radius: 100px; } /* pills stay pills — status/identity chips */
+
+  /* Flatten the glossy glow shadows into something closer to an
+     instrument panel: a hairline border does the work, shadow only
+     whispers depth. */
+  .stat-card, .panel {
+    box-shadow: 0 1px 2px rgba(20,17,10,0.04) !important;
+  }
+  body:not(.light) .stat-card, body:not(.light) .panel {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+  }
+  .stat-card:hover { box-shadow: 0 6px 16px rgba(20,17,10,0.08) !important; }
+  body:not(.light) .stat-card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.45) !important; }
+  .modal { box-shadow: 0 24px 48px rgba(20,17,10,0.18) !important; }
+  body:not(.light) .modal { box-shadow: 0 24px 48px rgba(0,0,0,0.6) !important; border: 1px solid var(--border2) !important; }
+  .topbar, .sb { box-shadow: none !important; border-bottom: 1px solid var(--border) !important; }
+  .sb { border-right: 1px solid var(--border) !important; }
+
+  th { background: var(--surface) !important; color: var(--sub) !important; }
+
+  /* Default stat bubble tint follows the new accent, not the old indigo. */
+  .stat-ic-bubble { background: rgba(193,84,30,0.14); background: color-mix(in srgb, var(--accentH) 14%, transparent); }
 </style>

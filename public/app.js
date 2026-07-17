@@ -284,7 +284,7 @@ var Login = {
           window.location.reload();
         })
         .catch(function (err) {
-          errorText.textContent = err.message || 'Something went wrong. Please try again.';
+          errorText.textContent = err.message || "Couldn't reach the server. Check your connection and try again.";
           errorText.style.display = 'block';
           loginBtn.disabled = false;
           loginBtn.textContent = 'Sign in';
@@ -343,7 +343,7 @@ var BranchView = {
       .then(BranchView.render)
       .catch(function (err) {
         document.getElementById('br-tableWrap').innerHTML =
-          emptyState('ph-warning-circle', 'Could not load transfers', err.message || 'Please sign in again.');
+          emptyState('ph-warning-circle', 'Could not load transfers', err.message || 'Your session may have expired — sign in again.');
       });
     BranchView.loadLedger();
   },
@@ -415,7 +415,7 @@ var BranchView = {
             BranchView.load();
           })
           .catch(function (err) {
-            toast('error', err.message || 'Failed to update.');
+            toast('error', err.message || 'Could not mark this as received. Try again.');
             btn.disabled = false;
             btn.textContent = 'Mark Received';
           });
@@ -477,7 +477,7 @@ var HodView = {
     }).join('');
 
     document.getElementById('hod-transferTableWrap').innerHTML = data.transfers.length === 0
-      ? emptyState('ph-truck', 'No transfers found', 'No branch transfers exist yet for your assigned branches.')
+      ? emptyState('ph-truck', 'No transfers found', 'None recorded yet for your assigned branches.')
       : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
   }
 };
@@ -721,7 +721,7 @@ var AdminView = {
       })
       .catch(function (err) {
         document.getElementById('ad-ledgerTableWrap').innerHTML =
-          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
+          emptyState('ph-warning-circle', 'Could not load stock ledger', err.message || 'Try refreshing the page.');
       });
   },
 
