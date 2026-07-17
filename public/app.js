@@ -225,8 +225,8 @@ function renderLedgerRows(rows, opts) {
   if (rows.length === 0) {
     return emptyState('ph-magnifying-glass', 'No matching rows', 'Try a different search or filter, or add opening stock first.');
   }
-  var head = (showBranch ? '<th>Branch</th>' : '')
-    + '<th>Item Name</th><th>Batch</th><th>Opening</th><th>Inward</th><th>Outward</th><th>Closing</th>';
+  var head = (showBranch ? '<th scope="col">Branch</th>' : '')
+    + '<th scope="col">Item Name</th><th scope="col">Batch</th><th scope="col">Opening</th><th scope="col">Inward</th><th scope="col">Outward</th><th scope="col">Closing</th>';
   var body = rows.map(function (r) {
     var closing = Math.round(r.closing_qty);
     return '<tr>'
@@ -239,7 +239,7 @@ function renderLedgerRows(rows, opts) {
       + '<td class="mono"' + (closing < 0 ? ' style="color:var(--danger)"' : '') + '><strong>' + closing + '</strong></td>'
       + '</tr>';
   }).join('');
-  return '<table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+  return '<table role="table" aria-label="Stock ledger"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
 }
 
 function filterLedgerRows(rows, term, opts) {
@@ -287,7 +287,7 @@ var Login = {
           errorText.textContent = err.message || "Couldn't reach the server. Check your connection and try again.";
           errorText.style.display = 'block';
           loginBtn.disabled = false;
-          loginBtn.textContent = 'Sign in';
+          loginBtn.innerHTML = 'Sign in';
           loginBtn.closest('.login-box').style.animation = 'errShake 0.4s var(--spring)';
           setTimeout(function () { loginBtn.closest('.login-box').style.animation = ''; }, 450);
         });
@@ -318,6 +318,9 @@ var BranchView = {
     document.getElementById('br-conv-submit').addEventListener('click', function () {
       var errBox = document.getElementById('br-conv-error');
       errBox.textContent = '';
+      var btn = document.getElementById('br-conv-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner spin"></i>Saving…';
       var payload = {
         fromItemName: document.getElementById('br-conv-fromItem').value,
         fromBatch: document.getElementById('br-conv-fromBatch').value,
@@ -333,7 +336,11 @@ var BranchView = {
           toast('success', 'Conversion recorded.');
           BranchView.loadLedger();
         })
-        .catch(function (err) { errBox.textContent = err.message; });
+        .catch(function (err) { errBox.textContent = err.message; })
+        .finally(function () {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ph ph-check"></i>Save conversion';
+        });
     });
   },
 
@@ -399,8 +406,8 @@ var BranchView = {
     }).join('');
 
     wrap.innerHTML =
-      '<table><thead><tr>'
-      + '<th>Docnum</th><th>Item</th><th>Batch</th><th>Qty</th><th>From</th><th>Date</th><th>Status</th><th></th>'
+      '<table role="table" aria-label="Incoming transfers"><thead><tr>'
+      + '<th scope="col">Docnum</th><th scope="col">Item</th><th scope="col">Batch</th><th scope="col">Qty</th><th scope="col">From</th><th scope="col">Date</th><th scope="col">Status</th><th scope="col"></th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table>';
 
     wrap.querySelectorAll('.mark-received-btn').forEach(function (btn) {
@@ -478,7 +485,7 @@ var HodView = {
 
     document.getElementById('hod-transferTableWrap').innerHTML = data.transfers.length === 0
       ? emptyState('ph-truck', 'No transfers found', 'None recorded yet for your assigned branches.')
-      : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
+      : '<table role="table" aria-label="Branch transfers"><thead><tr><th scope="col">Docnum</th><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Date</th><th scope="col">Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
   }
 };
 
@@ -496,6 +503,9 @@ var AdminView = {
     document.getElementById('ad-open-submit').addEventListener('click', function () {
       var errBox = document.getElementById('ad-open-error');
       errBox.textContent = '';
+      var btn = document.getElementById('ad-open-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner spin"></i>Saving…';
       var payload = {
         branchCode: document.getElementById('ad-open-branch').value,
         itemName: document.getElementById('ad-open-item').value,
@@ -511,7 +521,11 @@ var AdminView = {
           toast('success', 'Opening stock saved.');
           AdminView.loadLedger();
         })
-        .catch(function (err) { errBox.textContent = err.message; });
+        .catch(function (err) { errBox.textContent = err.message; })
+        .finally(function () {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ph ph-check"></i>Save';
+        });
     });
 
     document.getElementById('ad-open-template').addEventListener('click', AdminView.downloadOpeningTemplate);
@@ -533,6 +547,9 @@ var AdminView = {
     document.getElementById('ad-conv-submit').addEventListener('click', function () {
       var errBox = document.getElementById('ad-conv-error');
       errBox.textContent = '';
+      var btn = document.getElementById('ad-conv-submit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner spin"></i>Saving…';
       var payload = {
         branchCode: document.getElementById('ad-conv-branch').value,
         fromItemName: document.getElementById('ad-conv-fromItem').value,
@@ -553,7 +570,11 @@ var AdminView = {
           AdminView.loadLedger();
           AdminView.loadConversions();
         })
-        .catch(function (err) { errBox.textContent = err.message; });
+        .catch(function (err) { errBox.textContent = err.message; })
+        .finally(function () {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ph ph-check"></i>Save conversion';
+        });
     });
     if (SESSION && SESSION.role) {
       var isSuper = SESSION.role === 'SUPER_ADMIN';
@@ -740,7 +761,7 @@ var AdminView = {
       .then(function (rows) {
         document.getElementById('ad-conversionsTableWrap').innerHTML = rows.length === 0
           ? emptyState('ph-scissors', 'No conversions yet', 'Cutting/adjustment entries will appear here.')
-          : '<table><thead><tr><th>Date</th><th>Branch</th><th>Consumed</th><th>Produced</th><th>Notes</th></tr></thead><tbody>'
+          : '<table role="table" aria-label="Recent conversions"><thead><tr><th scope="col">Date</th><th scope="col">Branch</th><th scope="col">Consumed</th><th scope="col">Produced</th><th scope="col">Notes</th></tr></thead><tbody>'
             + rows.map(function (r) {
               return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>'
                 + '<td class="mono">' + r.branch_code + '</td>'
@@ -787,7 +808,7 @@ var AdminView = {
 
     document.getElementById('ad-transferTableWrap').innerHTML = data.transfers.length === 0
       ? emptyState('ph-truck', 'No branch transfers found', 'Transfers will appear here once the sheet sync runs.')
-      : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
+      : '<table role="table" aria-label="Recent transfers"><thead><tr><th scope="col">Docnum</th><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Date</th><th scope="col">Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
   },
 
   renderTagging: function (rows) {
@@ -814,7 +835,7 @@ var AdminView = {
     }).join('');
 
     document.getElementById('ad-taggingTableWrap').innerHTML =
-      '<table><thead><tr><th>Docnum</th><th>Item</th><th>Customer</th><th>Qty</th><th>From</th><th>Assign destination</th><th></th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+      '<table role="table" aria-label="Needs destination tagging"><thead><tr><th scope="col">Docnum</th><th scope="col">Item</th><th scope="col">Customer</th><th scope="col">Qty</th><th scope="col">From</th><th scope="col">Assign destination</th><th scope="col"></th></tr></thead><tbody>' + tableRows + '</tbody></table>';
 
     document.querySelectorAll('.tag-save-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -856,7 +877,7 @@ var AdminView = {
     }).join('');
 
     document.getElementById('ad-userTableWrap').innerHTML =
-      '<table><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>Branch</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+      '<table role="table" aria-label="Users"><thead><tr><th scope="col">Username</th><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Branch</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>' + rows + '</tbody></table>';
 
     document.querySelectorAll('.toggle-active').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -916,16 +937,25 @@ var AdminView = {
     var errBox = document.getElementById('ad-addUserError');
     errBox.textContent = '';
     var editId = document.getElementById('ad-editUserId').value;
+    var submitBtn = document.getElementById('ad-submitUserBtn');
+    submitBtn.disabled = true;
+    var originalBtnHTML = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="ph ph-spinner spin"></i>Saving…';
 
     if (editId) {
       var codes = Array.prototype.slice.call(document.querySelectorAll('.hod-branch-checkbox:checked')).map(function (cb) { return cb.value; });
       apiPost('/api/admin/hod-assignments', { hodUserId: editId, branchCodes: codes })
         .then(function () {
           toast('success', 'HOD branch access updated.');
+          submitBtn.disabled = false;
           AdminView.resetAddUserPanel();
           AdminView.loadAll();
         })
-        .catch(function (err) { errBox.textContent = err.message; });
+        .catch(function (err) {
+          errBox.textContent = err.message;
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalBtnHTML;
+        });
       return;
     }
 
@@ -944,10 +974,15 @@ var AdminView = {
     apiPost('/api/admin/users', payload)
       .then(function () {
         toast('success', 'User created.');
+        submitBtn.disabled = false;
         AdminView.resetAddUserPanel();
         AdminView.loadAll();
       })
-      .catch(function (err) { errBox.textContent = err.message; });
+      .catch(function (err) {
+        errBox.textContent = err.message;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHTML;
+      });
   },
 
   resetAddUserPanel: function () {
@@ -982,6 +1017,16 @@ async function boot() {
     showView('view-login');
     Login.init();
     return;
+  }
+
+  // Set role class on body for role-differentiated styling
+  document.body.classList.remove('role-admin', 'role-branch', 'role-hod');
+  if (SESSION.role === 'SUPER_ADMIN' || SESSION.role === 'ADMIN') {
+    document.body.classList.add('role-admin');
+  } else if (SESSION.role === 'BRANCH') {
+    document.body.classList.add('role-branch');
+  } else if (SESSION.role === 'HOD') {
+    document.body.classList.add('role-hod');
   }
 
   switch (SESSION.role) {
