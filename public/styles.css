@@ -284,7 +284,7 @@
   .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
   .fg { display: flex; flex-direction: column; gap: var(--s-8); }
   .fg.full { grid-column: 1 / -1; }
-  label { font-size: 12px; font-weight: 600; color: var(--text); }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
   .req { color: var(--red); }
 
   /* ── Inputs ── */
@@ -633,7 +633,7 @@
   th { padding: var(--s-12) var(--s-16) !important; }
   .panel-header { padding: var(--s-16) var(--s-24); font-size: 13.5px; }
   .panel { margin-bottom: var(--s-24); }
-  label { font-size: 12.5px; margin-bottom: 7px; }
+  label { font-size: 12.5px; }
   input, select, textarea { padding: 11px 13px; }
   .stat-label { font-size: 11.5px; }
 
@@ -676,8 +676,22 @@
     pointer-events: none; opacity: 0.7; float: right;
   }
 
+  /* 12-Column Grid System for Dialogs/Forms */
+  .grid-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px var(--s-16); margin-bottom: var(--s-16); align-items: flex-end; }
+  .grid-12 .span-12 { grid-column: span 12; }
+  .grid-12 .span-10 { grid-column: span 10; }
+  .grid-12 .span-9 { grid-column: span 9; }
+  .grid-12 .span-8 { grid-column: span 8; }
+  .grid-12 .span-6 { grid-column: span 6; }
+  .grid-12 .span-4 { grid-column: span 4; }
+  .grid-12 .span-3 { grid-column: span 3; }
+  .grid-12 .span-2 { grid-column: span 2; }
+  @media (max-width: 600px) {
+    .grid-12 > div { grid-column: span 12 !important; }
+  }
+
   /* Two-column form grid with section dividers */
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   .form-grid .full { grid-column: 1 / -1; }
   @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } }
   .form-sec-ttl { grid-column: 1 / -1; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 4px 0 12px; padding-bottom: 0; border-bottom: none; display: flex; align-items: center; gap: var(--s-8); padding-left: var(--s-12); border-left: 3px solid var(--accentH); }

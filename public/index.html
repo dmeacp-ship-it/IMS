@@ -137,34 +137,34 @@
         <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
       </div>
       <div class="modal-body">
-        <div class="form-grid">
+        <div class="grid-12">
           <div class="form-sec-ttl"><i class="ph ph-arrow-down"></i>Consume</div>
-          <div class="full">
+          <div class="span-12">
             <label>Item name (without VIRGO)</label>
             <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
           </div>
-          <div>
+          <div class="span-6">
             <label>Batch</label>
             <input type="text" id="br-conv-fromBatch" placeholder="e.g. A">
           </div>
-          <div>
+          <div class="span-6">
             <label>Quantity</label>
             <input type="number" id="br-conv-fromQty" min="0" step="1">
           </div>
           <div class="form-sec-ttl"><i class="ph ph-arrow-up"></i>Produce</div>
-          <div class="full">
+          <div class="span-12">
             <label>Item name (without VIRGO)</label>
             <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
           </div>
-          <div>
+          <div class="span-6">
             <label>Batch</label>
             <input type="text" id="br-conv-toBatch" placeholder="e.g. B">
           </div>
-          <div>
+          <div class="span-6">
             <label>Quantity</label>
             <input type="number" id="br-conv-toQty" min="0" step="1">
           </div>
-          <div class="full">
+          <div class="span-12">
             <label>Notes (optional)</label>
             <input type="text" id="br-conv-notes">
           </div>
@@ -314,13 +314,13 @@
         <div class="panel" style="margin-bottom:0;">
           <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
           <div style="padding:16px 20px;">
-            <div class="form-grid">
-              <div class="full"><label>Branch</label><select id="ad-open-branch"></select></div>
-              <div class="full"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-              <div><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
-              <div><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
-              <div><label>As of date</label><input type="date" id="ad-open-date"></div>
-              <div style="display:flex; align-items:flex-end;">
+            <div class="grid-12">
+              <div class="span-12"><label>Branch</label><select id="ad-open-branch"></select></div>
+              <div class="span-12"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+              <div class="span-4"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
+              <div class="span-4"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
+              <div class="span-4"><label>As of date</label><input type="date" id="ad-open-date"></div>
+              <div class="span-12" style="margin-top: 8px;">
                 <button class="btn btn-primary" id="ad-open-submit" style="width:100%;"><i class="ph ph-check"></i>Save entry</button>
               </div>
             </div>
@@ -341,25 +341,25 @@
       </div>
       <div class="modal-body">
         <div style="max-width: 840px;">
-          <div class="form-row">
-            <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
+          <div class="grid-12">
+            <div class="span-12"><label>Branch</label><select id="ad-conv-branch"></select></div>
           </div>
-        <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
-        <div class="form-row">
-          <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-          <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
-          <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
-        </div>
-        <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
-        <div class="form-row">
-          <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
-          <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
-          <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
-        </div>
-        <div class="form-row">
-          <div class="grow"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
-        </div>
-        <div class="error-text" id="ad-conv-error"></div>
+          <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
+          <div class="grid-12">
+            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
+            <div class="span-3"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
+          </div>
+          <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
+          <div class="grid-12">
+            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
+            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
+            <div class="span-3"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
+          </div>
+          <div class="grid-12">
+            <div class="span-12"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
+          </div>
+          <div class="error-text" id="ad-conv-error"></div>
         </div>
         <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:16px;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
         <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
@@ -378,33 +378,35 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="ad-editUserId" value="">
-        <div id="ad-field-username">
-          <label>Username</label>
-          <input type="text" id="ad-newUsername" autocomplete="off">
-        </div>
-        <div id="ad-field-fullname">
-          <label>Full name</label>
-          <input type="text" id="ad-newFullName" autocomplete="off">
-        </div>
-        <div id="ad-field-password">
-          <label>Password</label>
-          <input type="text" id="ad-newPassword" autocomplete="off">
-        </div>
-        <div id="ad-field-role">
-          <label>Role</label>
-          <select id="ad-newRole">
-            <option value="BRANCH">Branch</option>
-            <option value="ADMIN">Admin (Super Admin only)</option>
-            <option value="HOD">HOD (Super Admin only)</option>
-          </select>
-        </div>
-        <div id="ad-branchFieldWrap">
-          <label>Branch</label>
-          <select id="ad-newBranchCode"></select>
-        </div>
-        <div id="ad-hodBranchFieldWrap" style="display:none;">
-          <label>Branches this HOD can view</label>
-          <div id="ad-hodBranchCheckboxes" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:16px;"></div>
+        <div class="grid-12">
+          <div class="span-6" id="ad-field-username">
+            <label>Username</label>
+            <input type="text" id="ad-newUsername" autocomplete="off">
+          </div>
+          <div class="span-6" id="ad-field-password">
+            <label>Password</label>
+            <input type="text" id="ad-newPassword" autocomplete="off">
+          </div>
+          <div class="span-12" id="ad-field-fullname">
+            <label>Full name</label>
+            <input type="text" id="ad-newFullName" autocomplete="off">
+          </div>
+          <div class="span-6" id="ad-field-role">
+            <label>Role</label>
+            <select id="ad-newRole">
+              <option value="BRANCH">Branch</option>
+              <option value="ADMIN">Admin (Super Admin only)</option>
+              <option value="HOD">HOD (Super Admin only)</option>
+            </select>
+          </div>
+          <div class="span-6" id="ad-branchFieldWrap">
+            <label>Branch</label>
+            <select id="ad-newBranchCode"></select>
+          </div>
+          <div class="span-12" id="ad-hodBranchFieldWrap" style="display:none;">
+            <label>Branches this HOD can view</label>
+            <div id="ad-hodBranchCheckboxes" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:16px;"></div>
+          </div>
         </div>
         <div class="error-text" id="ad-addUserError"></div>
       </div>
