@@ -517,6 +517,19 @@ var AdminView = {
     document.getElementById('ad-open-template').addEventListener('click', AdminView.downloadOpeningTemplate);
     document.getElementById('ad-open-upload').addEventListener('click', AdminView.uploadOpeningCsv);
 
+    document.getElementById('ad-openOpeningBtn').addEventListener('click', function () {
+      document.getElementById('ad-open-error').textContent = '';
+      document.getElementById('ad-open-uploadResult').textContent = '';
+      openModal('ad-openingOverlay');
+    });
+    document.getElementById('ad-open-close').addEventListener('click', function () { closeModal('ad-openingOverlay'); });
+
+    document.getElementById('ad-openConversionBtn').addEventListener('click', function () {
+      document.getElementById('ad-conv-error').textContent = '';
+      openModal('ad-conversionOverlay');
+    });
+    document.getElementById('ad-conv-close').addEventListener('click', function () { closeModal('ad-conversionOverlay'); });
+
     document.getElementById('ad-conv-submit').addEventListener('click', function () {
       var errBox = document.getElementById('ad-conv-error');
       errBox.textContent = '';
@@ -536,6 +549,7 @@ var AdminView = {
             document.getElementById('ad-conv-' + f).value = '';
           });
           toast('success', 'Conversion recorded.');
+          closeModal('ad-conversionOverlay');
           AdminView.loadLedger();
           AdminView.loadConversions();
         })

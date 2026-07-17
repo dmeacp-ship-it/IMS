@@ -118,10 +118,10 @@
       <div class="panel" id="br-ledgerPanel" data-page="ledger">
         <div class="panel-header">
           <span><i class="ph ph-stack"></i>Stock ledger</span>
-          <button class="btn btn-success btn-small" id="br-recordConversionBtn"><i class="ph ph-scissors"></i>Record conversion</button>
-        </div>
-        <div class="panel-tools">
-          <input type="text" id="br-ledgerSearch" placeholder="Search item name or batch…">
+          <div class="panel-header-tools">
+            <input type="text" id="br-ledgerSearch" placeholder="Search item name or batch…">
+            <button class="btn btn-success btn-small" id="br-recordConversionBtn"><i class="ph ph-scissors"></i>Record conversion</button>
+          </div>
         </div>
         <div id="br-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
@@ -191,8 +191,6 @@
         <nav class="sb-nav">
           <div class="nsec">Menu</div>
           <div class="ni active" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-page="opening"><i class="ph ph-flag"></i><span class="ni-txt">Opening Stock</span></div>
-          <div class="ni" data-page="conversions"><i class="ph ph-scissors"></i><span class="ni-txt">Conversions</span></div>
           <div class="ni" data-page="tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
           <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
           <div class="ni" data-page="users"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
@@ -256,69 +254,16 @@
       </div>
 
       <div class="panel" id="ad-ledgerPanel" data-page="ledger">
-        <div class="panel-header"><span><i class="ph ph-stack"></i>Stock ledger — all branches</span></div>
-        <div class="panel-tools">
-          <input type="text" id="ad-ledgerSearch" placeholder="Search item name, batch, or branch…">
-          <select id="ad-ledgerBranchFilter"><option value="">All branches</option></select>
+        <div class="panel-header">
+          <span><i class="ph ph-stack"></i>Stock ledger — all branches</span>
+          <div class="panel-header-tools">
+            <input type="text" id="ad-ledgerSearch" placeholder="Search item name, batch, or branch…">
+            <select id="ad-ledgerBranchFilter"><option value="">All branches</option></select>
+            <button class="btn btn-ghost btn-small" id="ad-openOpeningBtn"><i class="ph ph-flag"></i>Opening Stock</button>
+            <button class="btn btn-success btn-small" id="ad-openConversionBtn"><i class="ph ph-scissors"></i>Record Conversion</button>
+          </div>
         </div>
         <div id="ad-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
-      </div>
-
-      <div class="panel" id="ad-openingPanel" data-page="opening">
-        <div class="panel-header"><span><i class="ph ph-upload-simple"></i>Bulk upload opening stock (CSV)</span></div>
-        <div style="padding:16px 20px;">
-          <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
-            Download the template, fill one row per branch + item + batch, then upload.
-            Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
-            Dates as <span class="mono">YYYY-MM-DD</span>. Re-uploading the same branch+item+batch overwrites the earlier value.
-          </p>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-            <button class="btn btn-ghost" id="ad-open-template"><i class="ph ph-download-simple"></i>Download CSV template</button>
-            <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:auto; margin-bottom:0;">
-            <button class="btn btn-primary" id="ad-open-upload"><i class="ph ph-upload-simple"></i>Upload CSV</button>
-          </div>
-          <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
-        </div>
-        <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
-        <div style="padding:16px 20px;">
-          <div class="form-row">
-            <div class="grow"><label>Branch</label><select id="ad-open-branch"></select></div>
-            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-            <div class="shrink"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
-            <div class="shrink"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
-            <div class="shrink"><label>As of date</label><input type="date" id="ad-open-date"></div>
-            <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save</button>
-          </div>
-          <div class="error-text" id="ad-open-error"></div>
-        </div>
-      </div>
-
-      <div class="panel" id="ad-conversionPanel" data-page="conversions">
-        <div class="panel-header"><span><i class="ph ph-scissors"></i>Record conversion</span></div>
-        <div style="padding:16px 20px;">
-          <div class="form-row">
-            <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
-          </div>
-          <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
-          <div class="form-row">
-            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-            <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
-            <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
-          </div>
-          <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
-          <div class="form-row">
-            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
-            <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
-            <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
-          </div>
-          <div class="form-row">
-            <div class="grow"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
-            <button class="btn btn-success" id="ad-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
-          </div>
-          <div class="error-text" id="ad-conv-error"></div>
-        </div>
-        <div class="panel-header"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
-        <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-taggingPanel" data-page="tagging">
@@ -337,6 +282,84 @@
           <button class="btn btn-primary btn-small" id="ad-addUserBtn"><i class="ph ph-user-plus"></i>Add user</button>
         </div>
         <div id="ad-userTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ad-openingOverlay" class="overlay" style="display:none;">
+    <div class="modal large">
+      <div class="modal-header">
+        <div class="modal-ttl"><i class="ph ph-flag"></i>Opening stock</div>
+      </div>
+      <div class="modal-body">
+        <div class="panel" style="margin-bottom:20px;">
+          <div class="panel-header"><span><i class="ph ph-upload-simple"></i>Bulk upload (CSV)</span></div>
+          <div style="padding:16px 20px;">
+            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
+              Download the template, fill one row per branch + item + batch, then upload.
+              Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
+              Dates as <span class="mono">YYYY-MM-DD</span>. Re-uploading the same branch+item+batch overwrites the earlier value.
+            </p>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+              <button class="btn btn-ghost" id="ad-open-template"><i class="ph ph-download-simple"></i>Download CSV template</button>
+              <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:auto; margin-bottom:0;">
+              <button class="btn btn-primary" id="ad-open-upload"><i class="ph ph-upload-simple"></i>Upload CSV</button>
+            </div>
+            <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:0;">
+          <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
+          <div style="padding:16px 20px;">
+            <div class="form-row">
+              <div class="grow"><label>Branch</label><select id="ad-open-branch"></select></div>
+              <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+              <div class="shrink"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
+              <div class="shrink"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
+              <div class="shrink"><label>As of date</label><input type="date" id="ad-open-date"></div>
+              <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save</button>
+            </div>
+            <div class="error-text" id="ad-open-error"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="ad-open-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ad-conversionOverlay" class="overlay" style="display:none;">
+    <div class="modal large">
+      <div class="modal-header">
+        <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
+        </div>
+        <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
+        <div class="form-row">
+          <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+          <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
+          <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
+        </div>
+        <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
+        <div class="form-row">
+          <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
+          <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
+          <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
+        </div>
+        <div class="form-row">
+          <div class="grow"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
+        </div>
+        <div class="error-text" id="ad-conv-error"></div>
+        <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:16px;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
+        <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="ad-conv-close">Close</button>
+        <button class="btn btn-success" id="ad-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
       </div>
     </div>
   </div>
@@ -431,9 +454,11 @@
 
     <div class="content">
       <div class="panel" id="hod-ledgerPanel" data-page="ledger">
-        <div class="panel-header"><span><i class="ph ph-stack"></i>Stock ledger — assigned branches</span></div>
-        <div class="panel-tools">
-          <input type="text" id="hod-ledgerSearch" placeholder="Search item name, batch, or branch…">
+        <div class="panel-header">
+          <span><i class="ph ph-stack"></i>Stock ledger — assigned branches</span>
+          <div class="panel-header-tools">
+            <input type="text" id="hod-ledgerSearch" placeholder="Search item name, batch, or branch…">
+          </div>
         </div>
         <div id="hod-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
