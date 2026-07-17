@@ -32,7 +32,8 @@ function apiPost(path, data) { return api(path, { method: 'POST', body: JSON.str
 function showView(id) {
   var views = document.querySelectorAll('.app-view');
   for (var i = 0; i < views.length; i++) views[i].style.display = 'none';
-  document.getElementById(id).style.display = 'block';
+  var el = document.getElementById(id);
+  el.style.display = el.classList.contains('shell') ? 'flex' : 'block';
 }
 
 async function logout() {
@@ -40,21 +41,72 @@ async function logout() {
   window.location.reload();
 }
 
+/* ------------------------------ sidebar chrome --------------------------- */
+function wireLogout() {
+  var btns = document.querySelectorAll('.logout-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', logout);
+}
+
+// Click the brand block to collapse/expand that shell's sidebar.
+function wireSidebarToggles() {
+  document.querySelectorAll('.sb-brand').forEach(function (brand) {
+    brand.addEventListener('click', function () {
+      var sb = brand.closest('.sb');
+      if (sb) sb.classList.toggle('col');
+    });
+  });
+}
+
+// Nav items scroll their target panel into view and mark themselves active.
+function wireSidebarNav() {
+  document.querySelectorAll('.sb-nav').forEach(function (nav) {
+    nav.querySelectorAll('.ni').forEach(function (item) {
+      item.addEventListener('click', function () {
+        nav.querySelectorAll('.ni').forEach(function (n) { n.classList.remove('active'); });
+        item.classList.add('active');
+        var targetId = item.getAttribute('data-target');
+        var target = targetId && document.getElementById(targetId);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  });
+}
+
+// Fills the avatar initials + display name in a shell's sidebar footer.
+function fillUserChrome(prefix) {
+  if (!SESSION) return;
+  var label = SESSION.fullName || SESSION.username || '?';
+  var initials = label.trim().split(/\s+/).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase();
+  var av = document.getElementById(prefix + '-avatar');
+  var nameEl = document.getElementById(prefix + '-userName');
+  if (av) av.textContent = initials;
+  if (nameEl) nameEl.textContent = label;
+}
+
 /* ------------------------------- LOGIN ---------------------------------- */
 var Login = {
   init: function () {
     var form = document.getElementById('login-form');
-    var errorText = document.getElementById('login-error');
-    var loginBtn = document.getElementById('login-btn');
+    var errorText = document.getElementById('loginErr');
+    var loginBtn = document.getElementById('loginBtn');
+    var pwInput = document.getElementById('login-password');
+    var pwEye = document.getElementById('login-pw-eye');
+
+    pwEye.addEventListener('click', function () {
+      var isPw = pwInput.type === 'password';
+      pwInput.type = isPw ? 'text' : 'password';
+      pwEye.innerHTML = isPw ? '<i class="ph ph-eye-slash"></i>' : '<i class="ph ph-eye"></i>';
+    });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       errorText.textContent = '';
+      errorText.style.display = 'none';
       loginBtn.disabled = true;
       loginBtn.textContent = 'Signing in…';
 
       var username = document.getElementById('login-username').value.trim();
-      var password = document.getElementById('login-password').value;
+      var password = pwInput.value;
 
       apiPost('/api/login', { username: username, password: password })
         .then(function () {
@@ -63,6 +115,7 @@ var Login = {
         })
         .catch(function (err) {
           errorText.textContent = err.message || 'Something went wrong. Please try again.';
+          errorText.style.display = 'block';
           loginBtn.disabled = false;
           loginBtn.textContent = 'Sign in';
         });
@@ -87,6 +140,16 @@ var BranchView = {
       data.ledger ? Math.round(data.ledger.running_balance).toLocaleString() : '—';
     document.getElementById('br-incomingCount').textContent = data.incomingTransfers.length;
 
+    var navBadge = document.getElementById('br-nav-badge');
+    if (navBadge) {
+      if (data.incomingTransfers.length > 0) {
+        navBadge.style.display = '';
+        navBadge.textContent = data.incomingTransfers.length;
+      } else {
+        navBadge.style.display = 'none';
+      }
+    }
+
     var wrap = document.getElementById('br-tableWrap');
 
     if (data.incomingTransfers.length === 0) {
@@ -103,7 +166,7 @@ var BranchView = {
         + '<td>' + t.source_branch_code + '</td>'
         + '<td>' + t.doc_date + '</td>'
         + '<td><span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span></td>'
-        + '<td><button class="btn-primary btn-small mark-received-btn" data-id="' + t.id + '">Mark Received</button></td>'
+        + '<td><button class="btn btn-primary btn-small mark-received-btn" data-id="' + t.id + '">Mark Received</button></td>'
         + '</tr>';
     }).join('');
 
@@ -180,8 +243,14 @@ var AdminView = {
 
   init: function () {
     if (SESSION && SESSION.role) {
-      document.getElementById('ad-rolePill').textContent =
-        SESSION.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN';
+      var isSuper = SESSION.role === 'SUPER_ADMIN';
+      var pill = document.getElementById('ad-rolePill');
+      if (pill) pill.textContent = isSuper ? 'SUPER ADMIN' : 'ADMIN';
+      var tag = document.getElementById('ad-rtag');
+      if (tag) {
+        tag.textContent = isSuper ? 'SUPER ADMIN' : 'ADMIN';
+        tag.className = 'rtag ' + (isSuper ? 'rt-SUPER_ADMIN' : 'rt-ADMIN');
+      }
     }
 
     document.getElementById('ad-newRole').addEventListener('change', function () {
@@ -230,6 +299,16 @@ var AdminView = {
     document.getElementById('ad-receivedCount').textContent = data.receivedCount;
     document.getElementById('ad-needsTaggingCount').textContent = data.needsTaggingCount;
 
+    var navBadge = document.getElementById('ad-nav-badge-tagging');
+    if (navBadge) {
+      if (data.needsTaggingCount > 0) {
+        navBadge.style.display = '';
+        navBadge.textContent = data.needsTaggingCount;
+      } else {
+        navBadge.style.display = 'none';
+      }
+    }
+
     var branchRows = data.branches.map(function (b) {
       return '<tr><td>' + b.branch_name + '</td><td class="mono">' + b.branch_code + '</td>'
         + '<td class="mono">' + Math.round(b.opening_qty) + '</td>'
@@ -277,7 +356,7 @@ var AdminView = {
         + '<td class="mono">' + r.quantity + '</td>'
         + '<td>' + r.source_branch_code + '</td>'
         + '<td><select class="tag-branch-select"><option value="">Select branch…</option>' + branchOptions + '</select></td>'
-        + '<td><button class="btn-primary btn-small tag-save-btn" data-id="' + r.id + '">Save</button></td>'
+        + '<td><button class="btn btn-primary btn-small tag-save-btn" data-id="' + r.id + '">Save</button></td>'
         + '</tr>';
     }).join('');
 
@@ -308,10 +387,10 @@ var AdminView = {
   renderUsers: function (users) {
     var rows = users.map(function (u) {
       var statusBtn = u.active
-        ? '<button class="btn-ghost btn-small toggle-active" data-id="' + u.id + '" data-active="false">Deactivate</button>'
-        : '<button class="btn-primary btn-small toggle-active" data-id="' + u.id + '" data-active="true">Activate</button>';
+        ? '<button class="btn btn-ghost btn-small toggle-active" data-id="' + u.id + '" data-active="false">Deactivate</button>'
+        : '<button class="btn btn-primary btn-small toggle-active" data-id="' + u.id + '" data-active="true">Activate</button>';
       var editBtn = u.role === 'HOD'
-        ? '<button class="btn-ghost btn-small edit-hod-btn" data-id="' + u.id + '" data-name="' + u.username + '">Edit branches</button>'
+        ? '<button class="btn btn-ghost btn-small edit-hod-btn" data-id="' + u.id + '" data-name="' + u.username + '">Edit branches</button>'
         : '';
       return '<tr><td>' + u.username + '</td><td>' + u.full_name + '</td><td>' + u.role + '</td>'
         + '<td>' + (u.branch_code || '—') + '</td>'
@@ -423,13 +502,10 @@ var AdminView = {
 };
 
 /* ------------------------------- BOOT ----------------------------------- */
-function wireLogout() {
-  var btns = document.querySelectorAll('.logout-btn');
-  for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', logout);
-}
-
 async function boot() {
   wireLogout();
+  wireSidebarToggles();
+  wireSidebarNav();
 
   try {
     SESSION = await apiGet('/api/session');
@@ -446,16 +522,19 @@ async function boot() {
   switch (SESSION.role) {
     case 'BRANCH':
       showView('view-branch');
+      fillUserChrome('br');
       BranchView.load();
       break;
     case 'SUPER_ADMIN':
     case 'ADMIN':
       showView('view-admin');
+      fillUserChrome('ad');
       AdminView.init();
       AdminView.loadAll();
       break;
     case 'HOD':
       showView('view-hod');
+      fillUserChrome('hod');
       HodView.load();
       break;
     default:

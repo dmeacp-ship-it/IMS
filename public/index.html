@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Virgo ACP — Branch Transfer Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -11,101 +12,178 @@
 <!-- ======================= LOGIN VIEW ======================= -->
 <div id="view-login" class="app-view" style="display:none;">
   <div class="login-shell">
-    <div class="login-card">
-      <div class="login-mark">VIRGO ACP</div>
-      <h1 class="login-title">Branch Transfer Tracker</h1>
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-ic"><i class="ph ph-package"></i></div>
+        <div class="logo-txt">
+          <h2>Virgo ACP</h2>
+          <p>Branch Transfer Tracker</p>
+        </div>
+      </div>
+      <div class="login-ttl">Sign in</div>
+      <div class="login-sub">Enter your credentials to access the dashboard.</div>
+
       <form id="login-form">
-        <label for="login-username">Username</label>
-        <input type="text" id="login-username" required autocomplete="username" autofocus>
+        <div class="lg">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" required autocomplete="username" autofocus>
+        </div>
+        <div class="lg">
+          <label for="login-password">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="login-password" required autocomplete="current-password">
+            <button type="button" class="pw-eye" id="login-pw-eye" tabindex="-1"><i class="ph ph-eye"></i></button>
+          </div>
+        </div>
 
-        <label for="login-password">Password</label>
-        <input type="password" id="login-password" required autocomplete="current-password">
-
-        <div class="error-text" id="login-error"></div>
-        <button type="submit" class="btn-primary" id="login-btn">Sign in</button>
+        <div id="loginErr"></div>
+        <button type="submit" class="btn btn-primary" id="loginBtn">Sign in</button>
       </form>
     </div>
   </div>
 </div>
 
 <!-- ======================= BRANCH VIEW ======================= -->
-<div id="view-branch" class="app-view" style="display:none;">
-  <div class="topbar">
-    <div class="topbar-left">
-      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
-      <span class="topbar-branch" id="br-branchLabel">—</span>
+<div id="view-branch" class="app-view shell" style="display:none;">
+  <aside class="sb">
+    <div>
+      <div class="sb-brand">
+        <div class="sb-logo"><i class="ph ph-package"></i></div>
+        <div>
+          <div class="sb-name">VIRGO ACP</div>
+          <div class="sb-sub">Transfer Tracker</div>
+        </div>
+      </div>
+      <div class="sb-nav-wrapper">
+        <nav class="sb-nav">
+          <div class="nsec">Menu</div>
+          <div class="ni active" data-target="br-statRow"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
+          <div class="ni" data-target="br-panel"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
+        </nav>
+      </div>
     </div>
-    <div class="topbar-right">
-      <span class="role-pill">BRANCH</span>
-      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    <div class="sb-bottom-wrapper">
+      <div class="sb-user">
+        <div class="av" id="br-avatar">–</div>
+        <div class="sb-ui">
+          <div class="sb-uname" id="br-userName">—</div>
+          <span class="rtag rt-BRANCH">BRANCH</span>
+        </div>
+        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <h1>Virgo ACP — Branch Transfer Tracker</h1>
+        <span id="br-branchLabel">—</span>
+      </div>
+      <div class="tb-r">
+        <span class="role-pill">BRANCH</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stat-row" id="br-statRow">
+        <div class="stat-card">
+          <div class="stat-value mono" id="br-runningBalance">—</div>
+          <div class="stat-label">Current stock (qty)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value mono" id="br-incomingCount">—</div>
+          <div class="stat-label">In-transit transfers</div>
+        </div>
+      </div>
+
+      <div class="panel" id="br-panel">
+        <div class="panel-header"><span>Incoming transfers</span></div>
+        <div id="br-tableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
     </div>
   </div>
-
-  <main>
-    <div class="stat-row">
-      <div class="stat-card">
-        <div class="stat-value mono" id="br-runningBalance">—</div>
-        <div class="stat-label">Current stock (qty)</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value mono" id="br-incomingCount">—</div>
-        <div class="stat-label">In-transit transfers</div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header"><span>Incoming transfers</span></div>
-      <div id="br-tableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-  </main>
 </div>
 
 <!-- ======================= ADMIN VIEW ======================= -->
-<div id="view-admin" class="app-view" style="display:none;">
-  <div class="topbar">
-    <div class="topbar-left">
-      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
-      <span class="topbar-branch">All branches</span>
+<div id="view-admin" class="app-view shell" style="display:none;">
+  <aside class="sb">
+    <div>
+      <div class="sb-brand">
+        <div class="sb-logo"><i class="ph ph-package"></i></div>
+        <div>
+          <div class="sb-name">VIRGO ACP</div>
+          <div class="sb-sub">Transfer Tracker</div>
+        </div>
+      </div>
+      <div class="sb-nav-wrapper">
+        <nav class="sb-nav">
+          <div class="nsec">Menu</div>
+          <div class="ni active" data-target="ad-statRow"><i class="ph ph-gauge"></i><span class="ni-txt">Dashboard</span></div>
+          <div class="ni" data-target="ad-branchPanel"><i class="ph ph-buildings"></i><span class="ni-txt">Branch Balances</span></div>
+          <div class="ni" data-target="ad-taggingPanel"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
+          <div class="ni" data-target="ad-transferPanel"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+          <div class="ni" data-target="ad-userPanel"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
+        </nav>
+      </div>
     </div>
-    <div class="topbar-right">
-      <span class="role-pill" id="ad-rolePill">ADMIN</span>
-      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    <div class="sb-bottom-wrapper">
+      <div class="sb-user">
+        <div class="av" id="ad-avatar">–</div>
+        <div class="sb-ui">
+          <div class="sb-uname" id="ad-userName">—</div>
+          <span class="rtag rt-ADMIN" id="ad-rtag">ADMIN</span>
+        </div>
+        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <h1>Virgo ACP — Branch Transfer Tracker</h1>
+        <span>All branches</span>
+      </div>
+      <div class="tb-r">
+        <span class="role-pill" id="ad-rolePill">ADMIN</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stat-row" id="ad-statRow">
+        <div class="stat-card"><div class="stat-value mono" id="ad-totalBranches">—</div><div class="stat-label">Branches</div></div>
+        <div class="stat-card"><div class="stat-value mono" id="ad-inTransitCount">—</div><div class="stat-label">In transit</div></div>
+        <div class="stat-card"><div class="stat-value mono" id="ad-receivedCount">—</div><div class="stat-label">Received (last 200)</div></div>
+        <div class="stat-card"><div class="stat-value mono" id="ad-needsTaggingCount">—</div><div class="stat-label">Needs destination tagging</div></div>
+      </div>
+
+      <div class="panel" id="ad-branchPanel">
+        <div class="panel-header"><span>Branch stock balances</span></div>
+        <div id="ad-branchTableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
+
+      <div class="panel" id="ad-taggingPanel" style="display:none;">
+        <div class="panel-header"><span>Needs destination tagging</span></div>
+        <div id="ad-taggingTableWrap"></div>
+      </div>
+
+      <div class="panel" id="ad-transferPanel">
+        <div class="panel-header"><span>Recent branch transfers</span></div>
+        <div id="ad-transferTableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
+
+      <div class="panel" id="ad-userPanel">
+        <div class="panel-header">
+          <span>Users</span>
+          <button class="btn btn-primary btn-small" id="ad-addUserBtn">Add user</button>
+        </div>
+        <div id="ad-userTableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
     </div>
   </div>
 
-  <main>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-value mono" id="ad-totalBranches">—</div><div class="stat-label">Branches</div></div>
-      <div class="stat-card"><div class="stat-value mono" id="ad-inTransitCount">—</div><div class="stat-label">In transit</div></div>
-      <div class="stat-card"><div class="stat-value mono" id="ad-receivedCount">—</div><div class="stat-label">Received (last 200)</div></div>
-      <div class="stat-card"><div class="stat-value mono" id="ad-needsTaggingCount">—</div><div class="stat-label">Needs destination tagging</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header"><span>Branch stock balances</span></div>
-      <div id="ad-branchTableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-
-    <div class="panel" id="ad-taggingPanel" style="display:none;">
-      <div class="panel-header"><span>Needs destination tagging</span></div>
-      <div id="ad-taggingTableWrap"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header"><span>Recent branch transfers</span></div>
-      <div id="ad-transferTableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <span>Users</span>
-        <button class="btn-primary btn-small" id="ad-addUserBtn">Add user</button>
-      </div>
-      <div id="ad-userTableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-  </main>
-
-  <div id="ad-addUserPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:10; max-height:80vh; overflow-y:auto;">
+  <div id="ad-addUserPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:210; max-height:80vh; overflow-y:auto;">
     <div class="panel-header"><span id="ad-addUserPanelTitle">Add user</span></div>
     <div style="padding:16px;">
       <input type="hidden" id="ad-editUserId" value="">
@@ -130,36 +208,66 @@
         <div id="ad-hodBranchCheckboxes" style="max-height:160px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; margin-bottom:16px;"></div>
       </div>
       <div class="error-text" id="ad-addUserError"></div>
-      <button class="btn-primary" id="ad-submitUserBtn">Create user</button>
-      <button class="btn-ghost btn-small" id="ad-cancelUserBtn" style="margin-top:8px; width:100%;">Cancel</button>
+      <button class="btn btn-primary" id="ad-submitUserBtn">Create user</button>
+      <button class="btn btn-ghost btn-small" id="ad-cancelUserBtn" style="margin-top:8px; width:100%;">Cancel</button>
     </div>
   </div>
 </div>
 
 <!-- ======================= HOD VIEW ======================= -->
-<div id="view-hod" class="app-view" style="display:none;">
-  <div class="topbar">
-    <div class="topbar-left">
-      <span class="topbar-title">Virgo ACP — Branch Transfer Tracker</span>
-      <span class="topbar-branch">Assigned branches</span>
+<div id="view-hod" class="app-view shell" style="display:none;">
+  <aside class="sb">
+    <div>
+      <div class="sb-brand">
+        <div class="sb-logo"><i class="ph ph-package"></i></div>
+        <div>
+          <div class="sb-name">VIRGO ACP</div>
+          <div class="sb-sub">Transfer Tracker</div>
+        </div>
+      </div>
+      <div class="sb-nav-wrapper">
+        <nav class="sb-nav">
+          <div class="nsec">Menu</div>
+          <div class="ni active" data-target="hod-branchPanel"><i class="ph ph-buildings"></i><span class="ni-txt">Branch Balances</span></div>
+          <div class="ni" data-target="hod-transferPanel"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+        </nav>
+      </div>
     </div>
-    <div class="topbar-right">
-      <span class="role-pill">HOD</span>
-      <button class="btn-ghost btn-small logout-btn">Sign out</button>
+    <div class="sb-bottom-wrapper">
+      <div class="sb-user">
+        <div class="av" id="hod-avatar">–</div>
+        <div class="sb-ui">
+          <div class="sb-uname" id="hod-userName">—</div>
+          <span class="rtag rt-HOD">HOD</span>
+        </div>
+        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-l">
+        <h1>Virgo ACP — Branch Transfer Tracker</h1>
+        <span>Assigned branches</span>
+      </div>
+      <div class="tb-r">
+        <span class="role-pill">HOD</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="panel" id="hod-branchPanel">
+        <div class="panel-header"><span>Branch stock balances</span></div>
+        <div id="hod-branchTableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
+
+      <div class="panel" id="hod-transferPanel">
+        <div class="panel-header"><span>Branch transfers</span></div>
+        <div id="hod-transferTableWrap"><div class="loading-state">Loading…</div></div>
+      </div>
     </div>
   </div>
-
-  <main>
-    <div class="panel">
-      <div class="panel-header"><span>Branch stock balances</span></div>
-      <div id="hod-branchTableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header"><span>Branch transfers</span></div>
-      <div id="hod-transferTableWrap"><div class="loading-state">Loading…</div></div>
-    </div>
-  </main>
 </div>
 
 <script src="/app.js"></script>
