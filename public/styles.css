@@ -576,7 +576,7 @@
 
   .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: var(--s-24); }
   .stat-card {
-    background: var(--card); border-left: 3px solid var(--stat-color, var(--accentH)); border-radius: 12px; padding: var(--s-16) var(--s-24);
+    background: var(--card); border-radius: 12px; padding: var(--s-16) var(--s-24);
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.03);
     position: relative; overflow: hidden;
   }
