@@ -1,0 +1,286 @@
+/*** Part A — bound to your central RAW_DATA Google Sheet ********************
+ * Reads the RAW_DATA tab (columns exactly as you specified: BRANCH_ID,
+ * BRANCH_NAME, DATE, BILL_DATE, SAP_BILL_NO, FMS Bill NO, CUSTOMER_CODE,
+ * CUSTOMER_NAME, ITEM_CODE, ITEM_DESCRIPTION, BATCH, HSN, THICKNESS,
+ * THICKNESS_TYPE, SIZE, FINISH, BRAND, GST_RATE, QUANTITY, CUTOMER_GST,
+ * NET_REVENUE, CGST_AMT, SGST_AMT, IGST_AMT, REVENUE_WITH_GST, DOCTOTAL,
+ * WTAMOUNT, UNIT_OF_PACKG, TOTAL_SQM, RATE_PER_SQM), classifies each row,
+ * and syncs to Supabase.
+ *
+ * Adds 3 columns after your last data column:
+ *   Billing/Source Branch — looked up from BRANCH_NAME against the live
+ *     `branches` table in Supabase (fetched fresh each run, so it never
+ *     drifts out of sync with the app).
+ *   Order Type — BRANCH-TRANSFER if CUSTOMER_NAME contains a Virgo group
+ *     root name, else CUSTOMER ORDER.
+ *   Destination Branch — for BRANCH-TRANSFER rows, the city parsed out of
+ *     CUSTOMER_NAME against CITY_KEYWORDS below. "NEEDS MANUAL TAGGING" if
+ *     no city matches.
+ *
+ * Setup: Extensions → Apps Script from within this sheet → paste this file
+ * as Code.gs → set Script Properties SUPABASE_URL / SUPABASE_SERVICE_KEY via
+ * setupSupabaseCredentials() (fill in, run once, blank out) → run
+ * syncToSupabase() manually (or wire a trigger once this is confirmed stable).
+ ******************************************************************************/
+
+var SHEET_NAME = 'RAW_DATA';
+
+// Column order exactly as specified — do not reorder without updating COL below.
+var COL = {
+  BRANCH_ID: 1, BRANCH_NAME: 2, DATE: 3, BILL_DATE: 4, SAP_BILL_NO: 5,
+  FMS_BILL_NO: 6, CUSTOMER_CODE: 7, CUSTOMER_NAME: 8, ITEM_CODE: 9,
+  ITEM_DESCRIPTION: 10, BATCH: 11, HSN: 12, THICKNESS: 13, THICKNESS_TYPE: 14,
+  SIZE: 15, FINISH: 16, BRAND: 17, GST_RATE: 18, QUANTITY: 19,
+  CUSTOMER_GST: 20, NET_REVENUE: 21, CGST_AMT: 22, SGST_AMT: 23, IGST_AMT: 24,
+  REVENUE_WITH_GST: 25, DOCTOTAL: 26, WTAMOUNT: 27, UNIT_OF_PACKG: 28,
+  TOTAL_SQM: 29, RATE_PER_SQM: 30
+};
+var LAST_RAW_COL = 30; // = COL.RATE_PER_SQM
+var COL_SOURCE_BRANCH = LAST_RAW_COL + 1; // 31
+var COL_ORDER_TYPE = LAST_RAW_COL + 2;    // 32
+var COL_DEST_BRANCH = LAST_RAW_COL + 3;   // 33
+
+var VIRGO_ROOT_NAMES = ['VIRGO LAMINATES', 'VIRGO ACP INDUSTRIES', 'VIRGO ALUMINUM', 'VIRGO ALUMINIUM'];
+
+// For parsing the destination city out of CUSTOMER_NAME on transfer rows.
+// GUJRAT must be checked before AHMEDABAD — a bare "-AHMEDABAD" suffix
+// always resolves to the factory; GUJRAT-BRANCH only matches when its own
+// keyword is present.
+var CITY_KEYWORDS = [
+  ['GUJRAT', 'GUJRAT-BRANCH'],
+  ['AHMEDABAD', 'AHMEDABAD-FACTORY'],
+  ['BANGALORE', 'BANGALORE-BRANCH'],
+  ['RANCHI', 'RANCHI-BRANCH'],
+  ['PANCHKULA', 'PANCHKULA-BRANCH'],
+  ['MUMBAI', 'MUMBAI-BRANCH'],
+  ['LUCKNOW', 'LUCKNOW-BRANCH'],
+  ['KOLKATA', 'KOLKATA-BRANCH'],
+  ['PATNA', 'PATNA-BRANCH'],
+  ['KOCHI', 'KOCHI-BRANCH'],
+  ['JAIPUR', 'JAIPUR-BRANCH'],
+  ['INDORE', 'INDORE-BRANCH'],
+  ['HYDERABAD', 'HYDERABAD-BRANCH'],
+  ['DELHI', 'DELHI-BRANCH'],
+  ['CHENNAI', 'CHENNAI-BRANCH'],
+  ['GUWAHATI', 'GUWAHATI-BRANCH'],
+  ['RAIPUR', 'RAIPUR-BRANCH']
+];
+
+var NEEDS_TAGGING = 'NEEDS MANUAL TAGGING';
+
+
+/* ============================================================================
+   SUPABASE HELPERS
+   ========================================================================== */
+
+function _supabaseHeaders() {
+  var props = PropertiesService.getScriptProperties();
+  return {
+    'apikey': props.getProperty('SUPABASE_SERVICE_KEY'),
+    'Authorization': 'Bearer ' + props.getProperty('SUPABASE_SERVICE_KEY'),
+    'Content-Type': 'application/json'
+  };
+}
+
+function _supabaseUrl() {
+  return PropertiesService.getScriptProperties().getProperty('SUPABASE_URL');
+}
+
+function setupSupabaseCredentials() {
+  var url = ''; // e.g. https://xxxx.supabase.co
+  var key = ''; // service_role key
+
+  if (!url || !key) {
+    Logger.log('Fill in url and key in this function before running.');
+    return;
+  }
+
+  var props = PropertiesService.getScriptProperties();
+  props.setProperty('SUPABASE_URL', url);
+  props.setProperty('SUPABASE_SERVICE_KEY', key);
+  Logger.log('Supabase credentials saved.');
+}
+
+// Fetches {normalizedName: code} from the live branches table, so this
+// script never drifts out of sync with what's actually in the app.
+function _fetchBranchNameMap() {
+  var res = UrlFetchApp.fetch(
+    _supabaseUrl() + '/rest/v1/branches?select=code,name',
+    { method: 'get', headers: _supabaseHeaders(), muteHttpExceptions: true }
+  );
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Failed to fetch branches from Supabase: ' + res.getContentText());
+  }
+  var rows = JSON.parse(res.getContentText());
+  var map = {};
+  rows.forEach(function (b) {
+    map[_normalize(b.name)] = b.code;
+  });
+  return map;
+}
+
+function _normalize(s) {
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+
+/* ============================================================================
+   CLASSIFICATION
+   ========================================================================== */
+
+function classifySalesData() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sheet) throw new Error('No sheet named "' + SHEET_NAME + '" found.');
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    Logger.log('No data rows to classify.');
+    return;
+  }
+
+  // Header row for the 3 computed columns.
+  sheet.getRange(1, COL_SOURCE_BRANCH, 1, 3).setValues(
+    [['Billing/Source Branch', 'Order Type', 'Destination Branch']]
+  );
+
+  var branchNameMap = _fetchBranchNameMap();
+
+  var numRows = lastRow - 1;
+  var data = sheet.getRange(2, 1, numRows, LAST_RAW_COL).getValues();
+  var out = new Array(numRows);
+  var unmatchedBranchNames = {};
+
+  for (var i = 0; i < numRows; i++) {
+    var row = data[i];
+    var branchName = row[COL.BRANCH_NAME - 1];
+    var customerName = String(row[COL.CUSTOMER_NAME - 1] || '');
+
+    var sourceCode = branchNameMap[_normalize(branchName)];
+    if (!sourceCode) {
+      sourceCode = NEEDS_TAGGING;
+      unmatchedBranchNames[branchName] = true;
+    }
+
+    var isTransfer = VIRGO_ROOT_NAMES.some(function (root) {
+      return customerName.toUpperCase().indexOf(root) !== -1;
+    });
+    var orderType = isTransfer ? 'BRANCH-TRANSFER' : 'CUSTOMER ORDER';
+
+    var destCode = '';
+    if (isTransfer) {
+      var upperName = customerName.toUpperCase();
+      destCode = NEEDS_TAGGING;
+      for (var c = 0; c < CITY_KEYWORDS.length; c++) {
+        if (upperName.indexOf(CITY_KEYWORDS[c][0]) !== -1) {
+          destCode = CITY_KEYWORDS[c][1];
+          break;
+        }
+      }
+    }
+
+    out[i] = [sourceCode, orderType, destCode];
+  }
+
+  sheet.getRange(2, COL_SOURCE_BRANCH, numRows, 3).setValues(out);
+
+  var unmatchedList = Object.keys(unmatchedBranchNames);
+  if (unmatchedList.length) {
+    Logger.log('Unmatched BRANCH_NAME values (fix these cells or add the branch in Supabase): ' + unmatchedList.join(' | '));
+  }
+  Logger.log('Classified ' + numRows + ' rows.');
+}
+
+
+/* ============================================================================
+   SYNC TO SUPABASE
+   ========================================================================== */
+
+function syncToSupabase() {
+  classifySalesData();
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    Logger.log('No data rows to sync.');
+    return;
+  }
+
+  var numRows = lastRow - 1;
+  var data = sheet.getRange(2, 1, numRows, COL_DEST_BRANCH).getValues();
+
+  var payload = data.map(function (row) {
+    return {
+      doc_date: _fmtDate(row[COL.DATE - 1]),
+      bill_date: _fmtDate(row[COL.BILL_DATE - 1]),
+      docnum: String(row[COL.SAP_BILL_NO - 1]),
+      bill_no: String(row[COL.FMS_BILL_NO - 1] || ''),
+      customer_code: String(row[COL.CUSTOMER_CODE - 1] || ''),
+      customer_name: String(row[COL.CUSTOMER_NAME - 1] || ''),
+      item_code: String(row[COL.ITEM_CODE - 1] || ''),
+      item_description: String(row[COL.ITEM_DESCRIPTION - 1] || ''),
+      batch: String(row[COL.BATCH - 1] || ''),
+      hsn: String(row[COL.HSN - 1] || ''),
+      thickness: String(row[COL.THICKNESS - 1] || ''),
+      thickness_type: String(row[COL.THICKNESS_TYPE - 1] || ''),
+      size: String(row[COL.SIZE - 1] || ''),
+      finish: String(row[COL.FINISH - 1] || ''),
+      brand: String(row[COL.BRAND - 1] || ''),
+      gst_rate: _num(row[COL.GST_RATE - 1]),
+      quantity: _num(row[COL.QUANTITY - 1]),
+      customer_gstin: String(row[COL.CUSTOMER_GST - 1] || ''),
+      net_revenue: _num(row[COL.NET_REVENUE - 1]),
+      cgst_amt: _num(row[COL.CGST_AMT - 1]),
+      sgst_amt: _num(row[COL.SGST_AMT - 1]),
+      igst_amt: _num(row[COL.IGST_AMT - 1]),
+      revenue_with_gst: _num(row[COL.REVENUE_WITH_GST - 1]),
+      doc_total: _num(row[COL.DOCTOTAL - 1]),
+      wt_amount: _num(row[COL.WTAMOUNT - 1]),
+      unit_of_packg: String(row[COL.UNIT_OF_PACKG - 1] || ''),
+      total_sqm: _num(row[COL.TOTAL_SQM - 1]),
+      rate_per_sqm: _num(row[COL.RATE_PER_SQM - 1]),
+      source_branch_code: _nullIfTagging(row[COL_SOURCE_BRANCH - 1]),
+      order_type: row[COL_ORDER_TYPE - 1],
+      destination_branch_code: _nullIfTagging(row[COL_DEST_BRANCH - 1])
+      // status / received_at / received_by deliberately omitted — those are
+      // owned by the web app, never reset by a re-sync.
+    };
+  }).filter(function (r) { return r.docnum && r.item_code; });
+
+  var CHUNK = 500;
+  for (var start = 0; start < payload.length; start += CHUNK) {
+    var chunk = payload.slice(start, start + CHUNK);
+    var res = UrlFetchApp.fetch(
+      _supabaseUrl() + '/rest/v1/sales_transactions?on_conflict=docnum,item_code,batch',
+      {
+        method: 'post',
+        headers: Object.assign({}, _supabaseHeaders(), {
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        }),
+        payload: JSON.stringify(chunk),
+        muteHttpExceptions: true
+      }
+    );
+    if (res.getResponseCode() >= 300) {
+      Logger.log('Sync failed for rows ' + start + '-' + (start + chunk.length) + ': ' + res.getContentText());
+      throw new Error('Sync failed, see log for details.');
+    }
+  }
+
+  Logger.log('Synced ' + payload.length + ' rows to Supabase.');
+}
+
+function _nullIfTagging(value) {
+  return (!value || value === NEEDS_TAGGING) ? null : value;
+}
+
+function _num(value) {
+  var n = Number(value);
+  return isNaN(n) ? null : n;
+}
+
+function _fmtDate(value) {
+  if (!value) return null;
+  var d = (value instanceof Date) ? value : new Date(value);
+  if (isNaN(d.getTime())) return null;
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}

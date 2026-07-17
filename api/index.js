@@ -69,6 +69,16 @@ app.post('/api/branch/mark-received',
   auth.requireRole('BRANCH'),
   handle(function (req) { return data.markReceived(req.session, req.body.transactionId); }));
 
+app.get('/api/branch/ledger',
+  auth.requireRole('BRANCH'),
+  handle(function (req) { return data.getItemLedger(req.session.branchCode); }));
+
+app.post('/api/branch/conversion',
+  auth.requireRole('BRANCH'),
+  handle(function (req) {
+    return data.createConversion(req.session, Object.assign({}, req.body, { branchCode: req.session.branchCode }));
+  }));
+
 /* ------------------------------- ADMIN ---------------------------------- */
 
 app.get('/api/admin/dashboard',
@@ -108,11 +118,31 @@ app.post('/api/admin/hod-assignments',
   auth.requireRole('SUPER_ADMIN'),
   handle(function (req) { return data.assignHodBranches(req.body.hodUserId, req.body.branchCodes); }));
 
+app.get('/api/admin/ledger',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getAllItemLedger(); }));
+
+app.post('/api/admin/opening-stock',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.upsertOpeningStock(req.session, req.body); }));
+
+app.post('/api/admin/conversion',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.createConversion(req.session, req.body); }));
+
+app.get('/api/admin/conversions',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.getConversions(req.query.branchCode); }));
+
 /* -------------------------------- HOD ----------------------------------- */
 
 app.get('/api/hod/dashboard',
   auth.requireRole('HOD'),
   handle(function (req) { return data.getHodDashboard(req.session); }));
+
+app.get('/api/hod/ledger',
+  auth.requireRole('HOD'),
+  handle(function (req) { return data.getHodItemLedger(req.session); }));
 
 /* Unmatched API routes → JSON 404 (so they never fall through to the SPA). */
 app.use('/api', function (req, res) {

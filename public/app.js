@@ -83,6 +83,44 @@ function fillUserChrome(prefix) {
   if (nameEl) nameEl.textContent = label;
 }
 
+/* ------------------------------ ledger table ----------------------------- */
+// Shared by Branch/Admin/HOD stock-ledger panels.
+function renderLedgerRows(rows, opts) {
+  opts = opts || {};
+  var showBranch = !!opts.showBranch;
+  if (rows.length === 0) {
+    return '<div class="empty-state">No stock ledger data yet.</div>';
+  }
+  var head = (showBranch ? '<th>Branch</th>' : '')
+    + '<th>FG Code</th><th>Item</th><th>Batch</th><th>Opening</th><th>Inward</th><th>Outward</th><th>Closing</th>';
+  var body = rows.map(function (r) {
+    var closing = Math.round(r.closing_qty);
+    return '<tr>'
+      + (showBranch ? '<td class="mono">' + r.branch_code + '</td>' : '')
+      + '<td class="mono">' + r.item_code + '</td>'
+      + '<td>' + r.item_description + '</td>'
+      + '<td class="mono">' + (r.batch || '—') + '</td>'
+      + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
+      + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
+      + '<td class="mono">' + Math.round(r.outward_qty) + '</td>'
+      + '<td class="mono"' + (closing < 0 ? ' style="color:var(--danger)"' : '') + '><strong>' + closing + '</strong></td>'
+      + '</tr>';
+  }).join('');
+  return '<table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+}
+
+function filterLedgerRows(rows, term, opts) {
+  opts = opts || {};
+  term = (term || '').trim().toLowerCase();
+  if (!term) return rows;
+  return rows.filter(function (r) {
+    return (r.item_code || '').toLowerCase().indexOf(term) !== -1
+      || (r.item_description || '').toLowerCase().indexOf(term) !== -1
+      || (r.batch || '').toLowerCase().indexOf(term) !== -1
+      || (opts.showBranch && (r.branch_code || '').toLowerCase().indexOf(term) !== -1);
+  });
+}
+
 /* ------------------------------- LOGIN ---------------------------------- */
 var Login = {
   init: function () {
@@ -125,6 +163,45 @@ var Login = {
 
 /* ------------------------------- BRANCH --------------------------------- */
 var BranchView = {
+  ledgerRows: [],
+
+  init: function () {
+    document.getElementById('br-ledgerSearch').addEventListener('input', function (e) {
+      var filtered = filterLedgerRows(BranchView.ledgerRows, e.target.value, { showBranch: false });
+      document.getElementById('br-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: false });
+    });
+
+    document.getElementById('br-recordConversionBtn').addEventListener('click', function () {
+      ['fromItem', 'fromBatch', 'fromQty', 'toItem', 'toBatch', 'toQty', 'notes'].forEach(function (f) {
+        document.getElementById('br-conv-' + f).value = '';
+      });
+      document.getElementById('br-conv-error').textContent = '';
+      document.getElementById('br-conversionPanel').style.display = 'block';
+    });
+    document.getElementById('br-conv-cancel').addEventListener('click', function () {
+      document.getElementById('br-conversionPanel').style.display = 'none';
+    });
+    document.getElementById('br-conv-submit').addEventListener('click', function () {
+      var errBox = document.getElementById('br-conv-error');
+      errBox.textContent = '';
+      var payload = {
+        fromItemCode: document.getElementById('br-conv-fromItem').value,
+        fromBatch: document.getElementById('br-conv-fromBatch').value,
+        fromQuantity: Number(document.getElementById('br-conv-fromQty').value),
+        toItemCode: document.getElementById('br-conv-toItem').value,
+        toBatch: document.getElementById('br-conv-toBatch').value,
+        toQuantity: Number(document.getElementById('br-conv-toQty').value),
+        notes: document.getElementById('br-conv-notes').value
+      };
+      apiPost('/api/branch/conversion', payload)
+        .then(function () {
+          document.getElementById('br-conversionPanel').style.display = 'none';
+          BranchView.loadLedger();
+        })
+        .catch(function (err) { errBox.textContent = err.message; });
+    });
+  },
+
   load: function () {
     apiGet('/api/branch/dashboard')
       .then(BranchView.render)
@@ -132,12 +209,24 @@ var BranchView = {
         document.getElementById('br-tableWrap').innerHTML =
           '<div class="empty-state">' + (err.message || 'Failed to load. Please sign in again.') + '</div>';
       });
+    BranchView.loadLedger();
+  },
+
+  loadLedger: function () {
+    apiGet('/api/branch/ledger')
+      .then(function (rows) {
+        BranchView.ledgerRows = rows;
+        document.getElementById('br-ledgerCount').textContent = rows.length;
+        document.getElementById('br-ledgerTableWrap').innerHTML = renderLedgerRows(rows, { showBranch: false });
+      })
+      .catch(function (err) {
+        document.getElementById('br-ledgerTableWrap').innerHTML =
+          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
+      });
   },
 
   render: function (data) {
     document.getElementById('br-branchLabel').textContent = data.branchCode;
-    document.getElementById('br-runningBalance').textContent =
-      data.ledger ? Math.round(data.ledger.running_balance).toLocaleString() : '—';
     document.getElementById('br-incomingCount').textContent = data.incomingTransfers.length;
 
     var navBadge = document.getElementById('br-nav-badge');
@@ -195,32 +284,44 @@ var BranchView = {
 
 /* -------------------------------- HOD ----------------------------------- */
 var HodView = {
+  ledgerRows: [],
+
+  init: function () {
+    document.getElementById('hod-ledgerSearch').addEventListener('input', function (e) {
+      var filtered = filterLedgerRows(HodView.ledgerRows, e.target.value, { showBranch: true });
+      document.getElementById('hod-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: true });
+    });
+  },
+
   load: function () {
     apiGet('/api/hod/dashboard')
       .then(HodView.render)
       .catch(function (err) {
-        document.getElementById('hod-branchTableWrap').innerHTML =
+        document.getElementById('hod-transferTableWrap').innerHTML =
           '<div class="empty-state">' + (err.message || 'Failed to load.') + '</div>';
-        document.getElementById('hod-transferTableWrap').innerHTML = '';
+      });
+    HodView.loadLedger();
+  },
+
+  loadLedger: function () {
+    apiGet('/api/hod/ledger')
+      .then(function (rows) {
+        HodView.ledgerRows = rows;
+        document.getElementById('hod-ledgerTableWrap').innerHTML = rows.length === 0
+          ? '<div class="empty-state">No branches assigned to your account yet, or no stock data. Contact your Super Admin.</div>'
+          : renderLedgerRows(rows, { showBranch: true });
+      })
+      .catch(function (err) {
+        document.getElementById('hod-ledgerTableWrap').innerHTML =
+          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
       });
   },
 
   render: function (data) {
     if (data.noAssignments) {
-      document.getElementById('hod-branchTableWrap').innerHTML =
-        '<div class="empty-state">No branches assigned to your account yet. Contact your Super Admin.</div>';
       document.getElementById('hod-transferTableWrap').innerHTML = '';
       return;
     }
-
-    var branchRows = data.branches.map(function (b) {
-      return '<tr><td>' + b.branch_name + '</td><td class="mono">' + b.branch_code + '</td>'
-        + '<td class="mono"><strong>' + Math.round(b.running_balance) + '</strong></td></tr>';
-    }).join('');
-
-    document.getElementById('hod-branchTableWrap').innerHTML = data.branches.length === 0
-      ? '<div class="empty-state">No stock data for your assigned branches.</div>'
-      : '<table><thead><tr><th>Branch</th><th>Code</th><th>Current Balance</th></tr></thead><tbody>' + branchRows + '</tbody></table>';
 
     var transferRows = data.transfers.map(function (t) {
       var badge = t.status === 'RECEIVED'
@@ -240,8 +341,57 @@ var HodView = {
 /* ------------------------------- ADMIN ---------------------------------- */
 var AdminView = {
   allBranches: [],
+  ledgerRows: [],
 
   init: function () {
+    document.getElementById('ad-open-date').value = new Date().toISOString().slice(0, 10);
+
+    document.getElementById('ad-ledgerSearch').addEventListener('input', AdminView.filterLedger);
+    document.getElementById('ad-ledgerBranchFilter').addEventListener('change', AdminView.filterLedger);
+
+    document.getElementById('ad-open-submit').addEventListener('click', function () {
+      var errBox = document.getElementById('ad-open-error');
+      errBox.textContent = '';
+      var payload = {
+        branchCode: document.getElementById('ad-open-branch').value,
+        itemCode: document.getElementById('ad-open-item').value,
+        batch: document.getElementById('ad-open-batch').value,
+        quantity: Number(document.getElementById('ad-open-qty').value),
+        asOfDate: document.getElementById('ad-open-date').value
+      };
+      apiPost('/api/admin/opening-stock', payload)
+        .then(function () {
+          document.getElementById('ad-open-item').value = '';
+          document.getElementById('ad-open-batch').value = '';
+          document.getElementById('ad-open-qty').value = '';
+          AdminView.loadLedger();
+        })
+        .catch(function (err) { errBox.textContent = err.message; });
+    });
+
+    document.getElementById('ad-conv-submit').addEventListener('click', function () {
+      var errBox = document.getElementById('ad-conv-error');
+      errBox.textContent = '';
+      var payload = {
+        branchCode: document.getElementById('ad-conv-branch').value,
+        fromItemCode: document.getElementById('ad-conv-fromItem').value,
+        fromBatch: document.getElementById('ad-conv-fromBatch').value,
+        fromQuantity: Number(document.getElementById('ad-conv-fromQty').value),
+        toItemCode: document.getElementById('ad-conv-toItem').value,
+        toBatch: document.getElementById('ad-conv-toBatch').value,
+        toQuantity: Number(document.getElementById('ad-conv-toQty').value),
+        notes: document.getElementById('ad-conv-notes').value
+      };
+      apiPost('/api/admin/conversion', payload)
+        .then(function () {
+          ['fromItem', 'fromBatch', 'fromQty', 'toItem', 'toBatch', 'toQty', 'notes'].forEach(function (f) {
+            document.getElementById('ad-conv-' + f).value = '';
+          });
+          AdminView.loadLedger();
+          AdminView.loadConversions();
+        })
+        .catch(function (err) { errBox.textContent = err.message; });
+    });
     if (SESSION && SESSION.role) {
       var isSuper = SESSION.role === 'SUPER_ADMIN';
       var pill = document.getElementById('ad-rolePill');
@@ -285,7 +435,60 @@ var AdminView = {
       AdminView.allBranches = branches;
       AdminView.populateBranchDropdown();
       AdminView.populateHodCheckboxes();
+      AdminView.populateLedgerBranchDropdowns();
     }).catch(AdminView.showError);
+    AdminView.loadLedger();
+    AdminView.loadConversions();
+  },
+
+  populateLedgerBranchDropdowns: function () {
+    var options = AdminView.allBranches.map(function (b) {
+      return '<option value="' + b.code + '">' + b.name + '</option>';
+    }).join('');
+    document.getElementById('ad-open-branch').innerHTML = options;
+    document.getElementById('ad-conv-branch').innerHTML = options;
+    document.getElementById('ad-ledgerBranchFilter').innerHTML = '<option value="">All branches</option>' + options;
+  },
+
+  loadLedger: function () {
+    apiGet('/api/admin/ledger')
+      .then(function (rows) {
+        AdminView.ledgerRows = rows;
+        AdminView.filterLedger();
+      })
+      .catch(function (err) {
+        document.getElementById('ad-ledgerTableWrap').innerHTML =
+          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
+      });
+  },
+
+  filterLedger: function () {
+    var term = document.getElementById('ad-ledgerSearch').value;
+    var branchFilter = document.getElementById('ad-ledgerBranchFilter').value;
+    var rows = AdminView.ledgerRows;
+    if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
+    rows = filterLedgerRows(rows, term, { showBranch: true });
+    document.getElementById('ad-ledgerTableWrap').innerHTML = renderLedgerRows(rows, { showBranch: true });
+  },
+
+  loadConversions: function () {
+    apiGet('/api/admin/conversions')
+      .then(function (rows) {
+        document.getElementById('ad-conversionsTableWrap').innerHTML = rows.length === 0
+          ? '<div class="empty-state">No conversions recorded yet.</div>'
+          : '<table><thead><tr><th>Date</th><th>Branch</th><th>Consumed</th><th>Produced</th><th>Notes</th></tr></thead><tbody>'
+            + rows.map(function (r) {
+              return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>'
+                + '<td class="mono">' + r.branch_code + '</td>'
+                + '<td class="mono">' + r.from_item_code + (r.from_batch ? ('-' + r.from_batch) : '') + ' × ' + r.from_quantity + '</td>'
+                + '<td class="mono">' + r.to_item_code + (r.to_batch ? ('-' + r.to_batch) : '') + ' × ' + r.to_quantity + '</td>'
+                + '<td>' + (r.notes || '—') + '</td></tr>';
+            }).join('')
+            + '</tbody></table>';
+      })
+      .catch(function () {
+        document.getElementById('ad-conversionsTableWrap').innerHTML = '<div class="empty-state">Failed to load conversions.</div>';
+      });
   },
 
   showError: function (err) {
@@ -294,7 +497,7 @@ var AdminView = {
   },
 
   renderDashboard: function (data) {
-    document.getElementById('ad-totalBranches').textContent = data.branches.length;
+    document.getElementById('ad-totalBranches').textContent = data.totalBranches;
     document.getElementById('ad-inTransitCount').textContent = data.inTransitCount;
     document.getElementById('ad-receivedCount').textContent = data.receivedCount;
     document.getElementById('ad-needsTaggingCount').textContent = data.needsTaggingCount;
@@ -308,19 +511,6 @@ var AdminView = {
         navBadge.style.display = 'none';
       }
     }
-
-    var branchRows = data.branches.map(function (b) {
-      return '<tr><td>' + b.branch_name + '</td><td class="mono">' + b.branch_code + '</td>'
-        + '<td class="mono">' + Math.round(b.opening_qty) + '</td>'
-        + '<td class="mono">' + Math.round(b.received_in) + '</td>'
-        + '<td class="mono">' + Math.round(b.transferred_out) + '</td>'
-        + '<td class="mono">' + Math.round(b.sold_out) + '</td>'
-        + '<td class="mono"><strong>' + Math.round(b.running_balance) + '</strong></td></tr>';
-    }).join('');
-
-    document.getElementById('ad-branchTableWrap').innerHTML =
-      '<table><thead><tr><th>Branch</th><th>Code</th><th>Opening</th><th>Received In</th>'
-      + '<th>Transferred Out</th><th>Sold</th><th>Balance</th></tr></thead><tbody>' + branchRows + '</tbody></table>';
 
     var transferRows = data.transfers.slice(0, 50).map(function (t) {
       var badge = t.status === 'RECEIVED'
@@ -523,6 +713,7 @@ async function boot() {
     case 'BRANCH':
       showView('view-branch');
       fillUserChrome('br');
+      BranchView.init();
       BranchView.load();
       break;
     case 'SUPER_ADMIN':
@@ -535,6 +726,7 @@ async function boot() {
     case 'HOD':
       showView('view-hod');
       fillUserChrome('hod');
+      HodView.init();
       HodView.load();
       break;
     default:
