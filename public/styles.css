@@ -554,4 +554,43 @@
   .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
 
   .error-text { color: var(--red); font-size: 13px; margin: -8px 0 16px; min-height: 1em; }
+
+  /* ═══════════════════════════════════════════════════════════
+     UI polish pass — spacing, stat cards, modals, forms, motion
+  ═══════════════════════════════════════════════════════════ */
+
+  .content { max-width: 1440px; margin: 0 auto; width: 100%; }
+
+  /* Stat cards: icon bubble + value, lift on hover, clickable variants */
+  .stat-card { display: flex; align-items: center; gap: 14px; transition: transform 0.25s var(--spring), box-shadow 0.25s var(--ease-out); }
+  .stat-card.goto { cursor: pointer; }
+  .stat-card:hover { transform: translateY(-3px); }
+  body.light .stat-card:hover { box-shadow: 0 12px 26px rgba(0,0,0,0.10); }
+  body:not(.light) .stat-card:hover { box-shadow: 0 12px 26px rgba(0,0,0,0.55); }
+  .stat-ic-bubble { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; background: rgba(79,70,229,0.12); color: var(--accentH); transition: transform 0.2s var(--spring); }
+  .stat-card:hover .stat-ic-bubble { transform: scale(1.1); }
+  .ic-orange { background: rgba(255,159,10,0.14); color: var(--orange); }
+  .ic-green  { background: rgba(48,209,88,0.14);  color: var(--green); }
+  .ic-red    { background: rgba(255,69,58,0.12);  color: var(--red); }
+  .ic-teal   { background: rgba(100,210,255,0.16); color: var(--teal); }
+
+  /* Panel headers: icon + title */
+  .panel-header span { display: inline-flex; align-items: center; gap: 8px; }
+  .panel-header span > i { color: var(--accentH); font-size: 16px; }
+
+  /* Consistent toolbar row inside panels (search + filters) */
+  .panel-tools { padding: 14px 20px 2px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .panel-tools input, .panel-tools select { max-width: 320px; margin-bottom: 12px; }
+
+  .table-scroll { overflow-x: auto; }
+
+  /* Two-column form grid with section dividers */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-sec-ttl { grid-column: 1 / -1; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 4px 0 12px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); display: flex; align-items: center; gap: 6px; }
+  .form-sec-ttl i { font-size: 14px; color: var(--accentH); }
+
+  /* Page-switch entrance */
+  .page-anim { animation: contentIn 0.3s var(--ease-out) both; }
 </style>

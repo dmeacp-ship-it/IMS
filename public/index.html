@@ -9,6 +9,8 @@
 </head>
 <body>
 
+<div id="toasts"></div>
+
 <!-- ======================= LOGIN VIEW ======================= -->
 <div id="view-login" class="app-view" style="display:none;">
   <div class="login-shell">
@@ -92,54 +94,84 @@
 
     <div class="content">
       <div class="stat-row" id="br-statRow" data-page="overview">
-        <div class="stat-card">
-          <div class="stat-value mono" id="br-incomingCount">—</div>
-          <div class="stat-label">In-transit transfers</div>
+        <div class="stat-card goto" data-goto="transfers" title="View incoming transfers">
+          <div class="stat-ic-bubble ic-orange"><i class="ph ph-truck"></i></div>
+          <div>
+            <div class="stat-value mono co" id="br-incomingCount">—</div>
+            <div class="stat-label">In-transit transfers</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value mono" id="br-ledgerCount">—</div>
-          <div class="stat-label">Item + batch lines in stock</div>
+        <div class="stat-card goto" data-goto="ledger" title="View stock ledger">
+          <div class="stat-ic-bubble"><i class="ph ph-stack"></i></div>
+          <div>
+            <div class="stat-value mono ca" id="br-ledgerCount">—</div>
+            <div class="stat-label">Item + batch lines in stock</div>
+          </div>
         </div>
       </div>
 
       <div class="panel" id="br-panel" data-page="transfers">
-        <div class="panel-header"><span>Incoming transfers</span></div>
-        <div id="br-tableWrap"><div class="loading-state">Loading…</div></div>
+        <div class="panel-header"><span><i class="ph ph-truck"></i>Incoming transfers</span></div>
+        <div id="br-tableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="br-ledgerPanel" data-page="ledger">
         <div class="panel-header">
-          <span>Stock ledger</span>
-          <button class="btn btn-success btn-small" id="br-recordConversionBtn">Record conversion</button>
+          <span><i class="ph ph-stack"></i>Stock ledger</span>
+          <button class="btn btn-success btn-small" id="br-recordConversionBtn"><i class="ph ph-scissors"></i>Record conversion</button>
         </div>
-        <div style="padding:12px 16px;">
-          <input type="text" id="br-ledgerSearch" placeholder="Search FG code, item, or batch…" style="max-width:320px;">
+        <div class="panel-tools">
+          <input type="text" id="br-ledgerSearch" placeholder="Search item name or batch…">
         </div>
-        <div id="br-ledgerTableWrap"><div class="loading-state">Loading…</div></div>
+        <div id="br-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
     </div>
   </div>
 
-  <div id="br-conversionPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:210; max-height:80vh; overflow-y:auto;">
-    <div class="panel-header"><span>Record conversion</span></div>
-    <div style="padding:16px;">
-      <label>Consume — item name (without VIRGO)</label>
-      <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
-      <label>Consume — batch</label>
-      <input type="text" id="br-conv-fromBatch" placeholder="e.g. A">
-      <label>Consume — quantity</label>
-      <input type="number" id="br-conv-fromQty" min="0" step="1">
-      <label>Produce — item name (without VIRGO)</label>
-      <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
-      <label>Produce — batch</label>
-      <input type="text" id="br-conv-toBatch" placeholder="e.g. B">
-      <label>Produce — quantity</label>
-      <input type="number" id="br-conv-toQty" min="0" step="1">
-      <label>Notes (optional)</label>
-      <input type="text" id="br-conv-notes">
-      <div class="error-text" id="br-conv-error"></div>
-      <button class="btn btn-success" id="br-conv-submit">Save conversion</button>
-      <button class="btn btn-ghost btn-small" id="br-conv-cancel" style="margin-top:8px; width:100%;">Cancel</button>
+  <div id="br-convOverlay" class="overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-sec-ttl"><i class="ph ph-arrow-down"></i>Consume</div>
+          <div class="full">
+            <label>Item name (without VIRGO)</label>
+            <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
+          </div>
+          <div>
+            <label>Batch</label>
+            <input type="text" id="br-conv-fromBatch" placeholder="e.g. A">
+          </div>
+          <div>
+            <label>Quantity</label>
+            <input type="number" id="br-conv-fromQty" min="0" step="1">
+          </div>
+          <div class="form-sec-ttl"><i class="ph ph-arrow-up"></i>Produce</div>
+          <div class="full">
+            <label>Item name (without VIRGO)</label>
+            <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
+          </div>
+          <div>
+            <label>Batch</label>
+            <input type="text" id="br-conv-toBatch" placeholder="e.g. B">
+          </div>
+          <div>
+            <label>Quantity</label>
+            <input type="number" id="br-conv-toQty" min="0" step="1">
+          </div>
+          <div class="full">
+            <label>Notes (optional)</label>
+            <input type="text" id="br-conv-notes">
+          </div>
+        </div>
+        <div class="error-text" id="br-conv-error"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="br-conv-cancel">Cancel</button>
+        <button class="btn btn-success" id="br-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
+      </div>
     </div>
   </div>
 </div>
@@ -194,126 +226,196 @@
 
     <div class="content">
       <div class="stat-row" id="ad-statRow" data-page="dashboard">
-        <div class="stat-card"><div class="stat-value mono" id="ad-totalBranches">—</div><div class="stat-label">Branches</div></div>
-        <div class="stat-card"><div class="stat-value mono" id="ad-inTransitCount">—</div><div class="stat-label">In transit</div></div>
-        <div class="stat-card"><div class="stat-value mono" id="ad-receivedCount">—</div><div class="stat-label">Received (last 200)</div></div>
-        <div class="stat-card"><div class="stat-value mono" id="ad-needsTaggingCount">—</div><div class="stat-label">Needs destination tagging</div></div>
+        <div class="stat-card goto" data-goto="ledger" title="View stock ledger">
+          <div class="stat-ic-bubble"><i class="ph ph-buildings"></i></div>
+          <div>
+            <div class="stat-value mono ca" id="ad-totalBranches">—</div>
+            <div class="stat-label">Branches</div>
+          </div>
+        </div>
+        <div class="stat-card goto" data-goto="transfers" title="View transfers">
+          <div class="stat-ic-bubble ic-orange"><i class="ph ph-truck"></i></div>
+          <div>
+            <div class="stat-value mono co" id="ad-inTransitCount">—</div>
+            <div class="stat-label">In transit</div>
+          </div>
+        </div>
+        <div class="stat-card goto" data-goto="transfers" title="View transfers">
+          <div class="stat-ic-bubble ic-green"><i class="ph ph-check-circle"></i></div>
+          <div>
+            <div class="stat-value mono cg" id="ad-receivedCount">—</div>
+            <div class="stat-label">Received (last 200)</div>
+          </div>
+        </div>
+        <div class="stat-card goto" data-goto="tagging" title="Resolve destination tagging">
+          <div class="stat-ic-bubble ic-red"><i class="ph ph-tag"></i></div>
+          <div>
+            <div class="stat-value mono cr" id="ad-needsTaggingCount">—</div>
+            <div class="stat-label">Needs destination tagging</div>
+          </div>
+        </div>
       </div>
 
       <div class="panel" id="ad-ledgerPanel" data-page="ledger">
-        <div class="panel-header"><span>Stock ledger — all branches</span></div>
-        <div style="padding:12px 16px; display:flex; gap:12px; flex-wrap:wrap;">
-          <input type="text" id="ad-ledgerSearch" placeholder="Search FG code, item, or batch…" style="max-width:320px;">
-          <select id="ad-ledgerBranchFilter" style="max-width:280px;"><option value="">All branches</option></select>
+        <div class="panel-header"><span><i class="ph ph-stack"></i>Stock ledger — all branches</span></div>
+        <div class="panel-tools">
+          <input type="text" id="ad-ledgerSearch" placeholder="Search item name, batch, or branch…">
+          <select id="ad-ledgerBranchFilter"><option value="">All branches</option></select>
         </div>
-        <div id="ad-ledgerTableWrap"><div class="loading-state">Loading…</div></div>
+        <div id="ad-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-openingPanel" data-page="opening">
-        <div class="panel-header"><span>Bulk upload opening stock (CSV)</span></div>
-        <div style="padding:16px;">
-          <p style="font-size:13px; color:var(--sub); margin-bottom:12px;">
+        <div class="panel-header"><span><i class="ph ph-upload-simple"></i>Bulk upload opening stock (CSV)</span></div>
+        <div style="padding:16px 20px;">
+          <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
             Download the template, fill one row per branch + item + batch, then upload.
             Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
             Dates as <span class="mono">YYYY-MM-DD</span>. Re-uploading the same branch+item+batch overwrites the earlier value.
           </p>
           <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-            <button class="btn btn-ghost" id="ad-open-template">Download CSV template</button>
+            <button class="btn btn-ghost" id="ad-open-template"><i class="ph ph-download-simple"></i>Download CSV template</button>
             <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:auto; margin-bottom:0;">
-            <button class="btn btn-primary" id="ad-open-upload">Upload CSV</button>
+            <button class="btn btn-primary" id="ad-open-upload"><i class="ph ph-upload-simple"></i>Upload CSV</button>
           </div>
           <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
         </div>
-        <div class="panel-header"><span>Or set a single entry</span></div>
-        <div style="padding:16px; max-width:420px;">
-          <label>Branch</label>
-          <select id="ad-open-branch"></select>
-          <label>Item name (without VIRGO)</label>
-          <input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220">
-          <label>Batch</label>
-          <input type="text" id="ad-open-batch" placeholder="e.g. A">
-          <label>Opening quantity</label>
-          <input type="number" id="ad-open-qty" min="0" step="1">
-          <label>As of date</label>
-          <input type="date" id="ad-open-date">
+        <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
+        <div style="padding:16px 20px; max-width:720px;">
+          <div class="form-grid">
+            <div class="full">
+              <label>Branch</label>
+              <select id="ad-open-branch"></select>
+            </div>
+            <div class="full">
+              <label>Item name (without VIRGO)</label>
+              <input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220">
+            </div>
+            <div>
+              <label>Batch</label>
+              <input type="text" id="ad-open-batch" placeholder="e.g. A">
+            </div>
+            <div>
+              <label>Opening quantity</label>
+              <input type="number" id="ad-open-qty" min="0" step="1">
+            </div>
+            <div>
+              <label>As of date</label>
+              <input type="date" id="ad-open-date">
+            </div>
+          </div>
           <div class="error-text" id="ad-open-error"></div>
-          <button class="btn btn-primary" id="ad-open-submit">Save opening stock</button>
+          <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save opening stock</button>
         </div>
       </div>
 
       <div class="panel" id="ad-conversionPanel" data-page="conversions">
-        <div class="panel-header"><span>Record conversion</span></div>
-        <div style="padding:16px; max-width:480px;">
-          <label>Branch</label>
-          <select id="ad-conv-branch"></select>
-          <label>Consume — item name (without VIRGO)</label>
-          <input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
-          <label>Consume — batch</label>
-          <input type="text" id="ad-conv-fromBatch" placeholder="e.g. A">
-          <label>Consume — quantity</label>
-          <input type="number" id="ad-conv-fromQty" min="0" step="1">
-          <label>Produce — item name (without VIRGO)</label>
-          <input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
-          <label>Produce — batch</label>
-          <input type="text" id="ad-conv-toBatch">
-          <label>Produce — quantity</label>
-          <input type="number" id="ad-conv-toQty" min="0" step="1">
-          <label>Notes (optional)</label>
-          <input type="text" id="ad-conv-notes">
+        <div class="panel-header"><span><i class="ph ph-scissors"></i>Record conversion</span></div>
+        <div style="padding:16px 20px; max-width:720px;">
+          <div class="form-grid">
+            <div class="full">
+              <label>Branch</label>
+              <select id="ad-conv-branch"></select>
+            </div>
+            <div class="form-sec-ttl"><i class="ph ph-arrow-down"></i>Consume</div>
+            <div class="full">
+              <label>Item name (without VIRGO)</label>
+              <input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
+            </div>
+            <div>
+              <label>Batch</label>
+              <input type="text" id="ad-conv-fromBatch" placeholder="e.g. A">
+            </div>
+            <div>
+              <label>Quantity</label>
+              <input type="number" id="ad-conv-fromQty" min="0" step="1">
+            </div>
+            <div class="form-sec-ttl"><i class="ph ph-arrow-up"></i>Produce</div>
+            <div class="full">
+              <label>Item name (without VIRGO)</label>
+              <input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
+            </div>
+            <div>
+              <label>Batch</label>
+              <input type="text" id="ad-conv-toBatch" placeholder="e.g. B">
+            </div>
+            <div>
+              <label>Quantity</label>
+              <input type="number" id="ad-conv-toQty" min="0" step="1">
+            </div>
+            <div class="full">
+              <label>Notes (optional)</label>
+              <input type="text" id="ad-conv-notes">
+            </div>
+          </div>
           <div class="error-text" id="ad-conv-error"></div>
-          <button class="btn btn-success" id="ad-conv-submit">Save conversion</button>
+          <button class="btn btn-success" id="ad-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
         </div>
-        <div class="panel-header"><span>Recent conversions</span></div>
-        <div id="ad-conversionsTableWrap"><div class="loading-state">Loading…</div></div>
+        <div class="panel-header"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
+        <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-taggingPanel" data-page="tagging">
-        <div class="panel-header"><span>Needs destination tagging</span></div>
-        <div id="ad-taggingTableWrap"><div class="loading-state">Loading…</div></div>
+        <div class="panel-header"><span><i class="ph ph-tag"></i>Needs destination tagging</span></div>
+        <div id="ad-taggingTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-transferPanel" data-page="transfers">
-        <div class="panel-header"><span>Recent branch transfers</span></div>
-        <div id="ad-transferTableWrap"><div class="loading-state">Loading…</div></div>
+        <div class="panel-header"><span><i class="ph ph-truck"></i>Recent branch transfers</span></div>
+        <div id="ad-transferTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-userPanel" data-page="users">
         <div class="panel-header">
-          <span>Users</span>
-          <button class="btn btn-primary btn-small" id="ad-addUserBtn">Add user</button>
+          <span><i class="ph ph-users"></i>Users</span>
+          <button class="btn btn-primary btn-small" id="ad-addUserBtn"><i class="ph ph-user-plus"></i>Add user</button>
         </div>
-        <div id="ad-userTableWrap"><div class="loading-state">Loading…</div></div>
+        <div id="ad-userTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
     </div>
   </div>
 
-  <div id="ad-addUserPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:210; max-height:80vh; overflow-y:auto;">
-    <div class="panel-header"><span id="ad-addUserPanelTitle">Add user</span></div>
-    <div style="padding:16px;">
-      <input type="hidden" id="ad-editUserId" value="">
-      <label>Username</label>
-      <input type="text" id="ad-newUsername">
-      <label>Full name</label>
-      <input type="text" id="ad-newFullName">
-      <label>Password</label>
-      <input type="text" id="ad-newPassword">
-      <label>Role</label>
-      <select id="ad-newRole">
-        <option value="BRANCH">Branch</option>
-        <option value="ADMIN">Admin (Super Admin only)</option>
-        <option value="HOD">HOD (Super Admin only)</option>
-      </select>
-      <div id="ad-branchFieldWrap">
-        <label>Branch</label>
-        <select id="ad-newBranchCode"></select>
+  <div id="ad-userOverlay" class="overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-ttl"><i class="ph ph-user-plus"></i><span id="ad-addUserPanelTitle">Add user</span></div>
       </div>
-      <div id="ad-hodBranchFieldWrap" style="display:none;">
-        <label>Branches this HOD can view</label>
-        <div id="ad-hodBranchCheckboxes" style="max-height:160px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:8px; margin-bottom:16px;"></div>
+      <div class="modal-body">
+        <input type="hidden" id="ad-editUserId" value="">
+        <div id="ad-field-username">
+          <label>Username</label>
+          <input type="text" id="ad-newUsername" autocomplete="off">
+        </div>
+        <div id="ad-field-fullname">
+          <label>Full name</label>
+          <input type="text" id="ad-newFullName" autocomplete="off">
+        </div>
+        <div id="ad-field-password">
+          <label>Password</label>
+          <input type="text" id="ad-newPassword" autocomplete="off">
+        </div>
+        <div id="ad-field-role">
+          <label>Role</label>
+          <select id="ad-newRole">
+            <option value="BRANCH">Branch</option>
+            <option value="ADMIN">Admin (Super Admin only)</option>
+            <option value="HOD">HOD (Super Admin only)</option>
+          </select>
+        </div>
+        <div id="ad-branchFieldWrap">
+          <label>Branch</label>
+          <select id="ad-newBranchCode"></select>
+        </div>
+        <div id="ad-hodBranchFieldWrap" style="display:none;">
+          <label>Branches this HOD can view</label>
+          <div id="ad-hodBranchCheckboxes" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:16px;"></div>
+        </div>
+        <div class="error-text" id="ad-addUserError"></div>
       </div>
-      <div class="error-text" id="ad-addUserError"></div>
-      <button class="btn btn-primary" id="ad-submitUserBtn">Create user</button>
-      <button class="btn btn-ghost btn-small" id="ad-cancelUserBtn" style="margin-top:8px; width:100%;">Cancel</button>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="ad-cancelUserBtn">Cancel</button>
+        <button class="btn btn-primary" id="ad-submitUserBtn"><i class="ph ph-check"></i>Create user</button>
+      </div>
     </div>
   </div>
 </div>
@@ -363,16 +465,16 @@
 
     <div class="content">
       <div class="panel" id="hod-ledgerPanel" data-page="ledger">
-        <div class="panel-header"><span>Stock ledger — assigned branches</span></div>
-        <div style="padding:12px 16px;">
-          <input type="text" id="hod-ledgerSearch" placeholder="Search FG code, item, or batch…" style="max-width:320px;">
+        <div class="panel-header"><span><i class="ph ph-stack"></i>Stock ledger — assigned branches</span></div>
+        <div class="panel-tools">
+          <input type="text" id="hod-ledgerSearch" placeholder="Search item name, batch, or branch…">
         </div>
-        <div id="hod-ledgerTableWrap"><div class="loading-state">Loading…</div></div>
+        <div id="hod-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="hod-transferPanel" data-page="transfers">
-        <div class="panel-header"><span>Branch transfers</span></div>
-        <div id="hod-transferTableWrap"><div class="loading-state">Loading…</div></div>
+        <div class="panel-header"><span><i class="ph ph-truck"></i>Branch transfers</span></div>
+        <div id="hod-transferTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
     </div>
   </div>

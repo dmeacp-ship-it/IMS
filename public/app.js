@@ -28,6 +28,82 @@ async function api(path, opts) {
 function apiGet(path) { return api(path, { method: 'GET' }); }
 function apiPost(path, data) { return api(path, { method: 'POST', body: JSON.stringify(data || {}) }); }
 
+/* ------------------------------ UI helpers ------------------------------ */
+// Dynamic-island toast; replaces browser alert() everywhere.
+function toast(type, msg) {
+  var wrap = document.getElementById('toasts');
+  if (!wrap) { alert(msg); return; }
+  var icons = { success: 'ph-check-circle', error: 'ph-x-circle', info: 'ph-info' };
+  var el = document.createElement('div');
+  el.className = 'toast t-' + type;
+  el.innerHTML = '<i class="ph ' + (icons[type] || icons.info) + '"></i><div class="toast-msg"></div><span class="toast-x"><i class="ph ph-x"></i></span>';
+  el.querySelector('.toast-msg').textContent = msg;
+  var gone = false;
+  function dismiss() {
+    if (gone) return;
+    gone = true;
+    el.style.animation = 'toastOut 0.25s var(--ease-out) forwards';
+    setTimeout(function () { el.remove(); }, 260);
+  }
+  el.querySelector('.toast-x').addEventListener('click', dismiss);
+  wrap.appendChild(el);
+  setTimeout(dismiss, 4200);
+}
+
+// Material-style ripple on every .btn (CSS .ripple already defined).
+function wireRipples() {
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn');
+    if (!btn || btn.disabled) return;
+    var rect = btn.getBoundingClientRect();
+    var d = Math.max(rect.width, rect.height);
+    var s = document.createElement('span');
+    s.className = 'ripple';
+    s.style.width = s.style.height = d + 'px';
+    s.style.left = (e.clientX - rect.left - d / 2) + 'px';
+    s.style.top = (e.clientY - rect.top - d / 2) + 'px';
+    btn.appendChild(s);
+    setTimeout(function () { s.remove(); }, 600);
+  });
+}
+
+/* Modal overlays: animated open/close, click-outside and Esc to dismiss. */
+function openModal(id) {
+  var o = document.getElementById(id);
+  o.classList.remove('closing');
+  o.style.display = 'flex';
+}
+function closeModal(id) {
+  var o = document.getElementById(id);
+  if (!o || o.style.display === 'none') return;
+  o.classList.add('closing');
+  setTimeout(function () {
+    o.style.display = 'none';
+    o.classList.remove('closing');
+  }, 200);
+}
+function wireModals() {
+  document.querySelectorAll('.overlay').forEach(function (o) {
+    o.addEventListener('click', function (e) {
+      if (e.target === o) closeModal(o.id);
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.overlay').forEach(function (o) {
+      if (o.style.display !== 'none') closeModal(o.id);
+    });
+  });
+}
+
+function skeletonBlock(height) {
+  return '<div class="skeleton" style="height:' + (height || 120) + 'px; margin:16px; border-radius:12px;"></div>';
+}
+
+function emptyState(icon, title, text) {
+  return '<div class="empty"><i class="ph ' + icon + '"></i><h3>' + title + '</h3><p>' + text + '</p></div>';
+}
+
 /* ------------------------------ view switching -------------------------- */
 function showView(id) {
   var views = document.querySelectorAll('.app-view');
@@ -67,7 +143,13 @@ function wireSidebarNav() {
 
     function showPage(page) {
       view.querySelectorAll('.content [data-page]').forEach(function (el) {
-        el.style.display = (el.getAttribute('data-page') === page) ? '' : 'none';
+        var match = el.getAttribute('data-page') === page;
+        el.style.display = match ? '' : 'none';
+        el.classList.remove('page-anim');
+        if (match) {
+          void el.offsetWidth; // restart the entrance animation
+          el.classList.add('page-anim');
+        }
       });
       var contentEl = view.querySelector('.content');
       if (contentEl) contentEl.scrollTop = 0;
@@ -83,6 +165,17 @@ function wireSidebarNav() {
 
     var active = nav.querySelector('.ni.active') || items[0];
     if (active) showPage(active.getAttribute('data-page'));
+  });
+}
+
+// Clickable stat cards jump to their related page via the sidebar nav.
+function wireStatGoto() {
+  document.querySelectorAll('.stat-card.goto').forEach(function (card) {
+    card.addEventListener('click', function () {
+      var view = card.closest('.app-view');
+      var ni = view && view.querySelector('.sb-nav .ni[data-page="' + card.getAttribute('data-goto') + '"]');
+      if (ni) ni.click();
+    });
   });
 }
 
@@ -130,7 +223,7 @@ function renderLedgerRows(rows, opts) {
   opts = opts || {};
   var showBranch = !!opts.showBranch;
   if (rows.length === 0) {
-    return '<div class="empty-state">No stock ledger data yet.</div>';
+    return emptyState('ph-magnifying-glass', 'No matching rows', 'Try a different search or filter, or add opening stock first.');
   }
   var head = (showBranch ? '<th>Branch</th>' : '')
     + '<th>Item Name</th><th>Batch</th><th>Opening</th><th>Inward</th><th>Outward</th><th>Closing</th>';
@@ -180,7 +273,7 @@ var Login = {
       errorText.textContent = '';
       errorText.style.display = 'none';
       loginBtn.disabled = true;
-      loginBtn.textContent = 'Signing in…';
+      loginBtn.innerHTML = '<i class="ph ph-spinner spin" style="width:auto;height:auto;border:none;"></i> Signing in…';
 
       var username = document.getElementById('login-username').value.trim();
       var password = pwInput.value;
@@ -195,6 +288,8 @@ var Login = {
           errorText.style.display = 'block';
           loginBtn.disabled = false;
           loginBtn.textContent = 'Sign in';
+          loginBtn.closest('.login-box').style.animation = 'errShake 0.4s var(--spring)';
+          setTimeout(function () { loginBtn.closest('.login-box').style.animation = ''; }, 450);
         });
     });
   }
@@ -215,10 +310,10 @@ var BranchView = {
         document.getElementById('br-conv-' + f).value = '';
       });
       document.getElementById('br-conv-error').textContent = '';
-      document.getElementById('br-conversionPanel').style.display = 'block';
+      openModal('br-convOverlay');
     });
     document.getElementById('br-conv-cancel').addEventListener('click', function () {
-      document.getElementById('br-conversionPanel').style.display = 'none';
+      closeModal('br-convOverlay');
     });
     document.getElementById('br-conv-submit').addEventListener('click', function () {
       var errBox = document.getElementById('br-conv-error');
@@ -234,7 +329,8 @@ var BranchView = {
       };
       apiPost('/api/branch/conversion', payload)
         .then(function () {
-          document.getElementById('br-conversionPanel').style.display = 'none';
+          closeModal('br-convOverlay');
+          toast('success', 'Conversion recorded.');
           BranchView.loadLedger();
         })
         .catch(function (err) { errBox.textContent = err.message; });
@@ -242,25 +338,29 @@ var BranchView = {
   },
 
   load: function () {
+    document.getElementById('br-tableWrap').innerHTML = skeletonBlock();
     apiGet('/api/branch/dashboard')
       .then(BranchView.render)
       .catch(function (err) {
         document.getElementById('br-tableWrap').innerHTML =
-          '<div class="empty-state">' + (err.message || 'Failed to load. Please sign in again.') + '</div>';
+          emptyState('ph-warning-circle', 'Could not load transfers', err.message || 'Please sign in again.');
       });
     BranchView.loadLedger();
   },
 
   loadLedger: function () {
+    document.getElementById('br-ledgerTableWrap').innerHTML = skeletonBlock();
     apiGet('/api/branch/ledger')
       .then(function (rows) {
         BranchView.ledgerRows = rows;
         document.getElementById('br-ledgerCount').textContent = rows.length;
-        document.getElementById('br-ledgerTableWrap').innerHTML = renderLedgerRows(rows, { showBranch: false });
+        document.getElementById('br-ledgerTableWrap').innerHTML = rows.length === 0
+          ? emptyState('ph-stack', 'No stock data yet', 'Opening stock and synced dispatches will appear here.')
+          : renderLedgerRows(rows, { showBranch: false });
       })
       .catch(function (err) {
         document.getElementById('br-ledgerTableWrap').innerHTML =
-          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
+          emptyState('ph-warning-circle', 'Could not load stock ledger', err.message || 'Try refreshing the page.');
       });
   },
 
@@ -281,7 +381,7 @@ var BranchView = {
     var wrap = document.getElementById('br-tableWrap');
 
     if (data.incomingTransfers.length === 0) {
-      wrap.innerHTML = '<div class="empty-state">No transfers currently in transit to your branch.</div>';
+      wrap.innerHTML = emptyState('ph-truck', 'No incoming transfers', 'Nothing is currently in transit to your branch.');
       return;
     }
 
@@ -310,9 +410,12 @@ var BranchView = {
         btn.textContent = 'Updating…';
 
         apiPost('/api/branch/mark-received', { transactionId: id })
-          .then(function () { BranchView.load(); })
+          .then(function () {
+            toast('success', 'Transfer marked as received.');
+            BranchView.load();
+          })
           .catch(function (err) {
-            alert(err.message || 'Failed to update.');
+            toast('error', err.message || 'Failed to update.');
             btn.disabled = false;
             btn.textContent = 'Mark Received';
           });
@@ -333,26 +436,28 @@ var HodView = {
   },
 
   load: function () {
+    document.getElementById('hod-transferTableWrap').innerHTML = skeletonBlock();
     apiGet('/api/hod/dashboard')
       .then(HodView.render)
       .catch(function (err) {
         document.getElementById('hod-transferTableWrap').innerHTML =
-          '<div class="empty-state">' + (err.message || 'Failed to load.') + '</div>';
+          emptyState('ph-warning-circle', 'Could not load transfers', err.message || 'Try refreshing the page.');
       });
     HodView.loadLedger();
   },
 
   loadLedger: function () {
+    document.getElementById('hod-ledgerTableWrap').innerHTML = skeletonBlock();
     apiGet('/api/hod/ledger')
       .then(function (rows) {
         HodView.ledgerRows = rows;
         document.getElementById('hod-ledgerTableWrap').innerHTML = rows.length === 0
-          ? '<div class="empty-state">No branches assigned to your account yet, or no stock data. Contact your Super Admin.</div>'
+          ? emptyState('ph-buildings', 'No branches assigned yet', 'Ask your Super Admin to assign branches to your account.')
           : renderLedgerRows(rows, { showBranch: true });
       })
       .catch(function (err) {
         document.getElementById('hod-ledgerTableWrap').innerHTML =
-          '<div class="empty-state">' + (err.message || 'Failed to load stock ledger.') + '</div>';
+          emptyState('ph-warning-circle', 'Could not load stock ledger', err.message || 'Try refreshing the page.');
       });
   },
 
@@ -372,7 +477,7 @@ var HodView = {
     }).join('');
 
     document.getElementById('hod-transferTableWrap').innerHTML = data.transfers.length === 0
-      ? '<div class="empty-state">No transfers found for your assigned branches.</div>'
+      ? emptyState('ph-truck', 'No transfers found', 'No branch transfers exist yet for your assigned branches.')
       : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
   }
 };
@@ -403,6 +508,7 @@ var AdminView = {
           document.getElementById('ad-open-item').value = '';
           document.getElementById('ad-open-batch').value = '';
           document.getElementById('ad-open-qty').value = '';
+          toast('success', 'Opening stock saved.');
           AdminView.loadLedger();
         })
         .catch(function (err) { errBox.textContent = err.message; });
@@ -429,6 +535,7 @@ var AdminView = {
           ['fromItem', 'fromBatch', 'fromQty', 'toItem', 'toBatch', 'toQty', 'notes'].forEach(function (f) {
             document.getElementById('ad-conv-' + f).value = '';
           });
+          toast('success', 'Conversion recorded.');
           AdminView.loadLedger();
           AdminView.loadConversions();
         })
@@ -457,13 +564,18 @@ var AdminView = {
       document.getElementById('ad-newFullName').value = '';
       document.getElementById('ad-newPassword').value = '';
       document.getElementById('ad-newRole').value = 'BRANCH';
+      document.getElementById('ad-addUserError').textContent = '';
+      ['username', 'fullname', 'password', 'role'].forEach(function (f) {
+        document.getElementById('ad-field-' + f).style.display = 'block';
+      });
       document.getElementById('ad-branchFieldWrap').style.display = 'block';
       document.getElementById('ad-hodBranchFieldWrap').style.display = 'none';
-      document.getElementById('ad-addUserPanel').style.display = 'block';
+      document.getElementById('ad-submitUserBtn').innerHTML = '<i class="ph ph-check"></i>Create user';
+      openModal('ad-userOverlay');
     });
 
     document.getElementById('ad-cancelUserBtn').addEventListener('click', function () {
-      document.getElementById('ad-addUserPanel').style.display = 'none';
+      closeModal('ad-userOverlay');
     });
 
     document.getElementById('ad-submitUserBtn').addEventListener('click', AdminView.submitUser);
@@ -557,6 +669,7 @@ var AdminView = {
           if (res.success) {
             resultBox.innerHTML = '<span style="color:var(--green)">Saved ' + res.saved + ' opening stock rows.</span>';
             fileInput.value = '';
+            toast('success', res.saved + ' opening stock rows saved.');
             AdminView.loadLedger();
           } else {
             var more = res.totalErrors > res.errors.length
@@ -608,10 +721,11 @@ var AdminView = {
   },
 
   loadConversions: function () {
+    document.getElementById('ad-conversionsTableWrap').innerHTML = skeletonBlock(80);
     apiGet('/api/admin/conversions')
       .then(function (rows) {
         document.getElementById('ad-conversionsTableWrap').innerHTML = rows.length === 0
-          ? '<div class="empty-state">No conversions recorded yet.</div>'
+          ? emptyState('ph-scissors', 'No conversions yet', 'Cutting/adjustment entries will appear here.')
           : '<table><thead><tr><th>Date</th><th>Branch</th><th>Consumed</th><th>Produced</th><th>Notes</th></tr></thead><tbody>'
             + rows.map(function (r) {
               return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>'
@@ -623,13 +737,13 @@ var AdminView = {
             + '</tbody></table>';
       })
       .catch(function () {
-        document.getElementById('ad-conversionsTableWrap').innerHTML = '<div class="empty-state">Failed to load conversions.</div>';
+        document.getElementById('ad-conversionsTableWrap').innerHTML =
+          emptyState('ph-warning-circle', 'Could not load conversions', 'Try refreshing the page.');
       });
   },
 
   showError: function (err) {
-    document.body.insertAdjacentHTML('afterbegin',
-      '<div class="empty-state" style="color:var(--danger)">' + (err.message || 'Something went wrong.') + '</div>');
+    toast('error', err.message || 'Something went wrong.');
   },
 
   renderDashboard: function (data) {
@@ -658,14 +772,14 @@ var AdminView = {
     }).join('');
 
     document.getElementById('ad-transferTableWrap').innerHTML = data.transfers.length === 0
-      ? '<div class="empty-state">No branch transfers found.</div>'
+      ? emptyState('ph-truck', 'No branch transfers found', 'Transfers will appear here once the sheet sync runs.')
       : '<table><thead><tr><th>Docnum</th><th>Item</th><th>Qty</th><th>From</th><th>To</th><th>Date</th><th>Status</th></tr></thead><tbody>' + transferRows + '</tbody></table>';
   },
 
   renderTagging: function (rows) {
     if (rows.length === 0) {
       document.getElementById('ad-taggingTableWrap').innerHTML =
-        '<div class="empty-state">No transfers need destination tagging right now.</div>';
+        emptyState('ph-check-circle', 'All tagged', 'No transfers need destination tagging right now.');
       return;
     }
 
@@ -694,14 +808,17 @@ var AdminView = {
         var row = btn.closest('tr');
         var select = row.querySelector('.tag-branch-select');
         var branchCode = select.value;
-        if (!branchCode) { alert('Choose a branch first.'); return; }
+        if (!branchCode) { toast('info', 'Choose a destination branch first.'); return; }
 
         btn.disabled = true;
         btn.textContent = 'Saving…';
         apiPost('/api/admin/resolve-destination', { transactionId: id, branchCode: branchCode })
-          .then(function () { AdminView.loadAll(); })
+          .then(function () {
+            toast('success', 'Destination saved.');
+            AdminView.loadAll();
+          })
           .catch(function (err) {
-            alert(err.message);
+            toast('error', err.message);
             btn.disabled = false;
             btn.textContent = 'Save';
           });
@@ -717,7 +834,8 @@ var AdminView = {
       var editBtn = u.role === 'HOD'
         ? '<button class="btn btn-ghost btn-small edit-hod-btn" data-id="' + u.id + '" data-name="' + u.username + '">Edit branches</button>'
         : '';
-      return '<tr><td>' + u.username + '</td><td>' + u.full_name + '</td><td>' + u.role + '</td>'
+      return '<tr><td>' + u.username + '</td><td>' + u.full_name + '</td>'
+        + '<td><span class="rtag rt-' + u.role + '">' + u.role.replace('_', ' ') + '</span></td>'
         + '<td>' + (u.branch_code || '—') + '</td>'
         + '<td>' + (u.active ? '<span class="badge badge-received">Active</span>' : '<span class="badge" style="color:var(--text-dim);background:var(--surface-raised)">Inactive</span>') + '</td>'
         + '<td>' + statusBtn + ' ' + editBtn + '</td></tr>';
@@ -731,8 +849,11 @@ var AdminView = {
         var id = btn.getAttribute('data-id');
         var active = btn.getAttribute('data-active') === 'true';
         apiPost('/api/admin/users/active', { userId: id, active: active })
-          .then(function () { apiGet('/api/admin/users').then(AdminView.renderUsers); })
-          .catch(function (err) { alert(err.message); });
+          .then(function () {
+            toast('success', active ? 'User activated.' : 'User deactivated.');
+            apiGet('/api/admin/users').then(AdminView.renderUsers);
+          })
+          .catch(function (err) { toast('error', err.message); });
       });
     });
 
@@ -741,7 +862,7 @@ var AdminView = {
         var hodUserId = btn.getAttribute('data-id');
         apiGet('/api/admin/hod-assignments?userId=' + encodeURIComponent(hodUserId))
           .then(function (assignedCodes) { AdminView.openHodEditor(hodUserId, assignedCodes); })
-          .catch(function (err) { alert(err.message); });
+          .catch(function (err) { toast('error', err.message); });
       });
     });
   },
@@ -766,15 +887,15 @@ var AdminView = {
   openHodEditor: function (hodUserId, assignedCodes) {
     document.getElementById('ad-addUserPanelTitle').textContent = 'Edit HOD branches';
     document.getElementById('ad-editUserId').value = hodUserId;
-    document.getElementById('ad-newUsername').style.display = 'none';
-    document.getElementById('ad-newFullName').style.display = 'none';
-    document.getElementById('ad-newPassword').style.display = 'none';
-    document.getElementById('ad-newRole').style.display = 'none';
+    document.getElementById('ad-addUserError').textContent = '';
+    ['username', 'fullname', 'password', 'role'].forEach(function (f) {
+      document.getElementById('ad-field-' + f).style.display = 'none';
+    });
     document.getElementById('ad-branchFieldWrap').style.display = 'none';
     document.getElementById('ad-hodBranchFieldWrap').style.display = 'block';
     AdminView.populateHodCheckboxes(assignedCodes);
-    document.getElementById('ad-submitUserBtn').textContent = 'Save branches';
-    document.getElementById('ad-addUserPanel').style.display = 'block';
+    document.getElementById('ad-submitUserBtn').innerHTML = '<i class="ph ph-check"></i>Save branches';
+    openModal('ad-userOverlay');
   },
 
   submitUser: function () {
@@ -786,6 +907,7 @@ var AdminView = {
       var codes = Array.prototype.slice.call(document.querySelectorAll('.hod-branch-checkbox:checked')).map(function (cb) { return cb.value; });
       apiPost('/api/admin/hod-assignments', { hodUserId: editId, branchCodes: codes })
         .then(function () {
+          toast('success', 'HOD branch access updated.');
           AdminView.resetAddUserPanel();
           AdminView.loadAll();
         })
@@ -807,6 +929,7 @@ var AdminView = {
 
     apiPost('/api/admin/users', payload)
       .then(function () {
+        toast('success', 'User created.');
         AdminView.resetAddUserPanel();
         AdminView.loadAll();
       })
@@ -814,12 +937,11 @@ var AdminView = {
   },
 
   resetAddUserPanel: function () {
-    document.getElementById('ad-addUserPanel').style.display = 'none';
-    document.getElementById('ad-newUsername').style.display = 'block';
-    document.getElementById('ad-newFullName').style.display = 'block';
-    document.getElementById('ad-newPassword').style.display = 'block';
-    document.getElementById('ad-newRole').style.display = 'block';
-    document.getElementById('ad-submitUserBtn').textContent = 'Create user';
+    closeModal('ad-userOverlay');
+    ['username', 'fullname', 'password', 'role'].forEach(function (f) {
+      document.getElementById('ad-field-' + f).style.display = 'block';
+    });
+    document.getElementById('ad-submitUserBtn').innerHTML = '<i class="ph ph-check"></i>Create user';
     document.getElementById('ad-newUsername').value = '';
     document.getElementById('ad-newFullName').value = '';
     document.getElementById('ad-newPassword').value = '';
@@ -832,6 +954,9 @@ async function boot() {
   wireLogout();
   wireSidebarToggles();
   wireSidebarNav();
+  wireStatGoto();
+  wireModals();
+  wireRipples();
 
   try {
     SESSION = await apiGet('/api/session');
