@@ -236,7 +236,7 @@ function renderLedgerRows(rows, opts) {
       + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
       + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
       + '<td class="mono">' + Math.round(r.outward_qty) + '</td>'
-      + '<td class="mono"' + (closing < 0 ? ' style="color:var(--danger)"' : '') + '><strong>' + closing + '</strong></td>'
+      + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : '')) + '"><strong>' + closing + '</strong></td>'
       + '</tr>';
   }).join('');
   return '<table role="table" aria-label="Stock ledger"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';

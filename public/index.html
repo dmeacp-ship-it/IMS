@@ -65,9 +65,9 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-page="overview"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
-          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
-          <div class="ni" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni active" data-page="overview" data-tooltip="Overview"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
+          <div class="ni" data-page="transfers" data-tooltip="Incoming Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
+          <div class="ni" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
         </nav>
       </div>
     </div>
@@ -97,14 +97,14 @@
 
     <div class="content" role="main">
       <div class="stat-row" id="br-statRow" data-page="overview">
-        <div class="stat-card goto" data-goto="transfers" title="View incoming transfers">
+        <div class="stat-card goto" data-goto="transfers" title="View incoming transfers" style="--stat-color: var(--orange)">
           <div class="stat-ic-bubble ic-orange"><i class="ph ph-truck"></i></div>
           <div>
             <div class="stat-value mono co" id="br-incomingCount">—</div>
             <div class="stat-label">In-transit transfers</div>
           </div>
         </div>
-        <div class="stat-card goto" data-goto="ledger" title="View stock ledger">
+        <div class="stat-card goto" data-goto="ledger" title="View stock ledger" style="--stat-color: var(--accentH)">
           <div class="stat-ic-bubble"><i class="ph ph-stack"></i></div>
           <div>
             <div class="stat-value mono ca" id="br-ledgerCount">—</div>
@@ -193,10 +193,10 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-page="tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
-          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
-          <div class="ni" data-page="users"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
+          <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="tagging" data-tooltip="Needs Tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
+          <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+          <div class="ni" data-page="users" data-tooltip="Users"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
         </nav>
       </div>
     </div>
@@ -226,28 +226,28 @@
 
     <div class="content" role="main">
       <div class="stat-row" id="ad-statRow" data-page="ledger">
-        <div class="stat-card goto" data-goto="ledger" title="View stock ledger">
+        <div class="stat-card goto" data-goto="ledger" title="View stock ledger" style="--stat-color: var(--accentH)">
           <div class="stat-ic-bubble"><i class="ph ph-buildings"></i></div>
           <div>
             <div class="stat-value mono ca" id="ad-totalBranches">—</div>
             <div class="stat-label">Branches</div>
           </div>
         </div>
-        <div class="stat-card goto" data-goto="transfers" title="View transfers">
+        <div class="stat-card goto" data-goto="transfers" title="View transfers" style="--stat-color: var(--orange)">
           <div class="stat-ic-bubble ic-orange"><i class="ph ph-truck"></i></div>
           <div>
             <div class="stat-value mono co" id="ad-inTransitCount">—</div>
             <div class="stat-label">In transit</div>
           </div>
         </div>
-        <div class="stat-card goto" data-goto="transfers" title="View transfers">
+        <div class="stat-card goto" data-goto="transfers" title="View transfers" style="--stat-color: var(--green)">
           <div class="stat-ic-bubble ic-green"><i class="ph ph-check-circle"></i></div>
           <div>
             <div class="stat-value mono cg" id="ad-receivedCount">—</div>
             <div class="stat-label">Received (last 200)</div>
           </div>
         </div>
-        <div class="stat-card goto" data-goto="tagging" title="Resolve destination tagging">
+        <div class="stat-card goto" data-goto="tagging" title="Resolve destination tagging" style="--stat-color: var(--red)">
           <div class="stat-ic-bubble ic-red"><i class="ph ph-tag"></i></div>
           <div>
             <div class="stat-value mono cr" id="ad-needsTaggingCount">—</div>
@@ -426,8 +426,8 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-page="transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
+          <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
         </nav>
       </div>
     </div>
