@@ -120,6 +120,11 @@ function fillUserChrome(prefix) {
 }
 
 /* ------------------------------ ledger table ----------------------------- */
+// Items display by name without the "VIRGO " prefix everywhere in the UI.
+function displayItemName(s) {
+  return String(s || '').replace(/^\s*VIRGO\s+/i, '');
+}
+
 // Shared by Branch/Admin/HOD stock-ledger panels.
 function renderLedgerRows(rows, opts) {
   opts = opts || {};
@@ -128,13 +133,12 @@ function renderLedgerRows(rows, opts) {
     return '<div class="empty-state">No stock ledger data yet.</div>';
   }
   var head = (showBranch ? '<th>Branch</th>' : '')
-    + '<th>FG Code</th><th>Item</th><th>Batch</th><th>Opening</th><th>Inward</th><th>Outward</th><th>Closing</th>';
+    + '<th>Item Name</th><th>Batch</th><th>Opening</th><th>Inward</th><th>Outward</th><th>Closing</th>';
   var body = rows.map(function (r) {
     var closing = Math.round(r.closing_qty);
     return '<tr>'
       + (showBranch ? '<td class="mono">' + r.branch_code + '</td>' : '')
-      + '<td class="mono">' + r.item_code + '</td>'
-      + '<td>' + r.item_description + '</td>'
+      + '<td class="mono">' + r.item_name + '</td>'
       + '<td class="mono">' + (r.batch || '—') + '</td>'
       + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
       + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
@@ -150,8 +154,7 @@ function filterLedgerRows(rows, term, opts) {
   term = (term || '').trim().toLowerCase();
   if (!term) return rows;
   return rows.filter(function (r) {
-    return (r.item_code || '').toLowerCase().indexOf(term) !== -1
-      || (r.item_description || '').toLowerCase().indexOf(term) !== -1
+    return (r.item_name || '').toLowerCase().indexOf(term) !== -1
       || (r.batch || '').toLowerCase().indexOf(term) !== -1
       || (opts.showBranch && (r.branch_code || '').toLowerCase().indexOf(term) !== -1);
   });
@@ -221,10 +224,10 @@ var BranchView = {
       var errBox = document.getElementById('br-conv-error');
       errBox.textContent = '';
       var payload = {
-        fromItemCode: document.getElementById('br-conv-fromItem').value,
+        fromItemName: document.getElementById('br-conv-fromItem').value,
         fromBatch: document.getElementById('br-conv-fromBatch').value,
         fromQuantity: Number(document.getElementById('br-conv-fromQty').value),
-        toItemCode: document.getElementById('br-conv-toItem').value,
+        toItemName: document.getElementById('br-conv-toItem').value,
         toBatch: document.getElementById('br-conv-toBatch').value,
         toQuantity: Number(document.getElementById('br-conv-toQty').value),
         notes: document.getElementById('br-conv-notes').value
@@ -285,7 +288,7 @@ var BranchView = {
     var rows = data.incomingTransfers.map(function (t) {
       return '<tr data-id="' + t.id + '">'
         + '<td class="mono">' + t.docnum + '</td>'
-        + '<td>' + t.item_description + '</td>'
+        + '<td>' + displayItemName(t.item_description) + '</td>'
         + '<td class="mono">' + t.batch + '</td>'
         + '<td class="mono">' + t.quantity + '</td>'
         + '<td>' + t.source_branch_code + '</td>'
@@ -363,7 +366,7 @@ var HodView = {
       var badge = t.status === 'RECEIVED'
         ? '<span class="badge badge-received"><span class="badge-dot"></span>Received</span>'
         : '<span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span>';
-      return '<tr><td class="mono">' + t.docnum + '</td><td>' + t.item_description + '</td>'
+      return '<tr><td class="mono">' + t.docnum + '</td><td>' + displayItemName(t.item_description) + '</td>'
         + '<td class="mono">' + t.quantity + '</td><td>' + t.source_branch_code + '</td>'
         + '<td>' + (t.destination_branch_code || '—') + '</td><td>' + t.doc_date + '</td><td>' + badge + '</td></tr>';
     }).join('');
@@ -390,7 +393,7 @@ var AdminView = {
       errBox.textContent = '';
       var payload = {
         branchCode: document.getElementById('ad-open-branch').value,
-        itemCode: document.getElementById('ad-open-item').value,
+        itemName: document.getElementById('ad-open-item').value,
         batch: document.getElementById('ad-open-batch').value,
         quantity: Number(document.getElementById('ad-open-qty').value),
         asOfDate: document.getElementById('ad-open-date').value
@@ -405,15 +408,18 @@ var AdminView = {
         .catch(function (err) { errBox.textContent = err.message; });
     });
 
+    document.getElementById('ad-open-template').addEventListener('click', AdminView.downloadOpeningTemplate);
+    document.getElementById('ad-open-upload').addEventListener('click', AdminView.uploadOpeningCsv);
+
     document.getElementById('ad-conv-submit').addEventListener('click', function () {
       var errBox = document.getElementById('ad-conv-error');
       errBox.textContent = '';
       var payload = {
         branchCode: document.getElementById('ad-conv-branch').value,
-        fromItemCode: document.getElementById('ad-conv-fromItem').value,
+        fromItemName: document.getElementById('ad-conv-fromItem').value,
         fromBatch: document.getElementById('ad-conv-fromBatch').value,
         fromQuantity: Number(document.getElementById('ad-conv-fromQty').value),
-        toItemCode: document.getElementById('ad-conv-toItem').value,
+        toItemName: document.getElementById('ad-conv-toItem').value,
         toBatch: document.getElementById('ad-conv-toBatch').value,
         toQuantity: Number(document.getElementById('ad-conv-toQty').value),
         notes: document.getElementById('ad-conv-notes').value
@@ -477,6 +483,100 @@ var AdminView = {
     AdminView.loadConversions();
   },
 
+  downloadOpeningTemplate: function () {
+    var lines = ['BRANCH_CODE,ITEM_NAME,BATCH,QUANTITY,AS_OF_DATE'];
+    if (AdminView.allBranches.length) {
+      lines.push(AdminView.allBranches[0].code + ',ALFA3030-VL300-2440X1220,A,10,2025-09-04');
+    } else {
+      lines.push('BANGALORE-BRANCH,ALFA3030-VL300-2440X1220,A,10,2025-09-04');
+    }
+    // Valid branch codes as comment-style reference rows the user deletes.
+    var blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'opening_stock_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  },
+
+  // Minimal CSV parse: split lines/commas, strip surrounding quotes. Item
+  // names and branch codes contain no commas, so this is sufficient.
+  parseOpeningCsv: function (text) {
+    var lines = text.split(/\r?\n/).filter(function (l) { return l.trim() !== ''; });
+    if (lines.length < 2) throw new Error('The file has no data rows.');
+
+    var header = lines[0].split(',').map(function (c) {
+      return c.trim().replace(/^"|"$/g, '').toUpperCase();
+    });
+    var expected = ['BRANCH_CODE', 'ITEM_NAME', 'BATCH', 'QUANTITY', 'AS_OF_DATE'];
+    if (header.join('|') !== expected.join('|')) {
+      throw new Error('Header row must be exactly: ' + expected.join(',') + ' — download the template and start from that.');
+    }
+
+    return lines.slice(1).map(function (line) {
+      var cells = line.split(',').map(function (c) { return c.trim().replace(/^"|"$/g, ''); });
+      return {
+        branchCode: cells[0],
+        itemName: cells[1],
+        batch: cells[2] || '',
+        quantity: cells[3],
+        asOfDate: cells[4]
+      };
+    });
+  },
+
+  uploadOpeningCsv: function () {
+    var resultBox = document.getElementById('ad-open-uploadResult');
+    var fileInput = document.getElementById('ad-open-file');
+    var btn = document.getElementById('ad-open-upload');
+    var file = fileInput.files && fileInput.files[0];
+
+    if (!file) {
+      resultBox.innerHTML = '<span style="color:var(--danger)">Choose a CSV file first.</span>';
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function () {
+      var rows;
+      try {
+        rows = AdminView.parseOpeningCsv(String(reader.result));
+      } catch (e) {
+        resultBox.innerHTML = '<span style="color:var(--danger)">' + e.message + '</span>';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading…';
+      resultBox.textContent = 'Validating ' + rows.length + ' rows…';
+
+      apiPost('/api/admin/opening-stock/bulk', { rows: rows })
+        .then(function (res) {
+          if (res.success) {
+            resultBox.innerHTML = '<span style="color:var(--green)">Saved ' + res.saved + ' opening stock rows.</span>';
+            fileInput.value = '';
+            AdminView.loadLedger();
+          } else {
+            var more = res.totalErrors > res.errors.length
+              ? '<div>…and ' + (res.totalErrors - res.errors.length) + ' more.</div>' : '';
+            resultBox.innerHTML = '<div style="color:var(--danger)">Nothing was saved — fix these and re-upload the whole file:</div>'
+              + '<div style="max-height:180px; overflow-y:auto; margin-top:6px;">'
+              + res.errors.map(function (e) { return '<div>• ' + e + '</div>'; }).join('') + more + '</div>';
+          }
+        })
+        .catch(function (err) {
+          resultBox.innerHTML = '<span style="color:var(--danger)">' + (err.message || 'Upload failed.') + '</span>';
+        })
+        .finally(function () {
+          btn.disabled = false;
+          btn.textContent = 'Upload CSV';
+        });
+    };
+    reader.readAsText(file);
+  },
+
   populateLedgerBranchDropdowns: function () {
     var options = AdminView.allBranches.map(function (b) {
       return '<option value="' + b.code + '">' + b.name + '</option>';
@@ -516,8 +616,8 @@ var AdminView = {
             + rows.map(function (r) {
               return '<tr><td>' + new Date(r.created_at).toLocaleDateString() + '</td>'
                 + '<td class="mono">' + r.branch_code + '</td>'
-                + '<td class="mono">' + r.from_item_code + (r.from_batch ? ('-' + r.from_batch) : '') + ' × ' + r.from_quantity + '</td>'
-                + '<td class="mono">' + r.to_item_code + (r.to_batch ? ('-' + r.to_batch) : '') + ' × ' + r.to_quantity + '</td>'
+                + '<td class="mono">' + r.from_item_name + (r.from_batch ? ('-' + r.from_batch) : '') + ' × ' + r.from_quantity + '</td>'
+                + '<td class="mono">' + r.to_item_name + (r.to_batch ? ('-' + r.to_batch) : '') + ' × ' + r.to_quantity + '</td>'
                 + '<td>' + (r.notes || '—') + '</td></tr>';
             }).join('')
             + '</tbody></table>';
@@ -552,7 +652,7 @@ var AdminView = {
       var badge = t.status === 'RECEIVED'
         ? '<span class="badge badge-received"><span class="badge-dot"></span>Received</span>'
         : '<span class="badge badge-transit"><span class="badge-dot"></span>In Transit</span>';
-      return '<tr><td class="mono">' + t.docnum + '</td><td>' + t.item_description + '</td>'
+      return '<tr><td class="mono">' + t.docnum + '</td><td>' + displayItemName(t.item_description) + '</td>'
         + '<td class="mono">' + t.quantity + '</td><td>' + t.source_branch_code + '</td>'
         + '<td>' + (t.destination_branch_code || '—') + '</td><td>' + t.doc_date + '</td><td>' + badge + '</td></tr>';
     }).join('');
@@ -576,7 +676,7 @@ var AdminView = {
     var tableRows = rows.map(function (r) {
       return '<tr data-id="' + r.id + '">'
         + '<td class="mono">' + r.docnum + '</td>'
-        + '<td>' + r.item_description + '</td>'
+        + '<td>' + displayItemName(r.item_description) + '</td>'
         + '<td>' + (r.customer_name || '—') + '</td>'
         + '<td class="mono">' + r.quantity + '</td>'
         + '<td>' + r.source_branch_code + '</td>'

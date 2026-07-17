@@ -123,13 +123,13 @@
   <div id="br-conversionPanel" class="panel" style="display:none; position:fixed; top:60px; right:24px; width:340px; z-index:210; max-height:80vh; overflow-y:auto;">
     <div class="panel-header"><span>Record conversion</span></div>
     <div style="padding:16px;">
-      <label>Consume — item code</label>
+      <label>Consume — item name (without VIRGO)</label>
       <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
       <label>Consume — batch</label>
       <input type="text" id="br-conv-fromBatch" placeholder="e.g. A">
       <label>Consume — quantity</label>
       <input type="number" id="br-conv-fromQty" min="0" step="1">
-      <label>Produce — item code</label>
+      <label>Produce — item name (without VIRGO)</label>
       <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
       <label>Produce — batch</label>
       <input type="text" id="br-conv-toBatch" placeholder="e.g. B">
@@ -210,11 +210,25 @@
       </div>
 
       <div class="panel" id="ad-openingPanel" data-page="opening">
-        <div class="panel-header"><span>Set / update opening stock</span></div>
+        <div class="panel-header"><span>Bulk upload opening stock (CSV)</span></div>
+        <div style="padding:16px;">
+          <p style="font-size:13px; color:var(--sub); margin-bottom:12px;">
+            Download the template, fill one row per branch + item + batch, then upload.
+            Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
+            Dates as <span class="mono">YYYY-MM-DD</span>. Re-uploading the same branch+item+batch overwrites the earlier value.
+          </p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <button class="btn btn-ghost" id="ad-open-template">Download CSV template</button>
+            <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:auto; margin-bottom:0;">
+            <button class="btn btn-primary" id="ad-open-upload">Upload CSV</button>
+          </div>
+          <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
+        </div>
+        <div class="panel-header"><span>Or set a single entry</span></div>
         <div style="padding:16px; max-width:420px;">
           <label>Branch</label>
           <select id="ad-open-branch"></select>
-          <label>Item code</label>
+          <label>Item name (without VIRGO)</label>
           <input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220">
           <label>Batch</label>
           <input type="text" id="ad-open-batch" placeholder="e.g. A">
@@ -232,14 +246,14 @@
         <div style="padding:16px; max-width:480px;">
           <label>Branch</label>
           <select id="ad-conv-branch"></select>
-          <label>Consume — item code</label>
-          <input type="text" id="ad-conv-fromItem">
+          <label>Consume — item name (without VIRGO)</label>
+          <input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
           <label>Consume — batch</label>
-          <input type="text" id="ad-conv-fromBatch">
+          <input type="text" id="ad-conv-fromBatch" placeholder="e.g. A">
           <label>Consume — quantity</label>
           <input type="number" id="ad-conv-fromQty" min="0" step="1">
-          <label>Produce — item code</label>
-          <input type="text" id="ad-conv-toItem">
+          <label>Produce — item name (without VIRGO)</label>
+          <input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
           <label>Produce — batch</label>
           <input type="text" id="ad-conv-toBatch">
           <label>Produce — quantity</label>

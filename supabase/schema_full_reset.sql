@@ -120,15 +120,17 @@ for each row execute function set_default_transfer_status();
 
 -- Opening balance per branch + item + batch. Upserted, not appended —
 -- re-entering the same branch+item+batch corrects the value and as_of_date.
+-- item_name is the descriptive name WITHOUT the "VIRGO " prefix
+-- (e.g. ALFA3030-VL300-2440X1220), matching the branch STOCK sheets.
 create table opening_stock (
   branch_code text not null references branches(code),
-  item_code   text not null,
+  item_name   text not null,
   batch       text not null default '',
   quantity    numeric not null default 0,
   as_of_date  date not null,
   updated_by  uuid references user_profiles(id),
   updated_at  timestamptz not null default now(),
-  primary key (branch_code, item_code, batch)
+  primary key (branch_code, item_name, batch)
 );
 
 -- Manual "cutting" / conversion events: one batch consumed, one new batch
@@ -136,10 +138,10 @@ create table opening_stock (
 create table stock_conversions (
   id              bigint generated always as identity primary key,
   branch_code     text not null references branches(code),
-  from_item_code  text not null,
+  from_item_name  text not null,
   from_batch      text not null default '',
   from_quantity   numeric not null check (from_quantity > 0),
-  to_item_code    text not null,
+  to_item_name    text not null,
   to_batch        text not null default '',
   to_quantity     numeric not null check (to_quantity > 0),
   notes           text,
@@ -148,51 +150,61 @@ create table stock_conversions (
 );
 
 create index idx_stock_conv_branch on stock_conversions(branch_code);
-create index idx_stock_conv_from on stock_conversions(branch_code, from_item_code, from_batch);
-create index idx_stock_conv_to on stock_conversions(branch_code, to_item_code, to_batch);
+create index idx_stock_conv_from on stock_conversions(branch_code, from_item_name, from_batch);
+create index idx_stock_conv_to on stock_conversions(branch_code, to_item_name, to_batch);
 
--- Item-level running ledger: opening + received-transfers-in + conversions-in
--- minus dispatched-out (sales + transfers, deducted immediately on sync,
--- regardless of received status) minus conversions-out.
+-- Item-level running ledger, keyed by ITEM NAME (item_description with the
+-- leading "VIRGO " stripped) + batch: opening + received-transfers-in +
+-- conversions-in minus dispatched-out (sales + transfers, deducted
+-- immediately on sync, regardless of received status) minus conversions-out.
 create or replace view item_stock_ledger as
-with outward as (
-  select source_branch_code as branch_code, item_code, batch, sum(quantity) as qty
+with txn as (
+  select
+    source_branch_code,
+    destination_branch_code,
+    order_type,
+    status,
+    upper(trim(regexp_replace(item_description, '^\s*VIRGO\s+', '', 'i'))) as item_name,
+    upper(trim(batch)) as batch,
+    quantity
   from sales_transactions
+),
+outward as (
+  select source_branch_code as branch_code, item_name, batch, sum(quantity) as qty
+  from txn
   where source_branch_code is not null
-  group by source_branch_code, item_code, batch
+  group by 1, 2, 3
 ),
 inward_transfer as (
-  select destination_branch_code as branch_code, item_code, batch, sum(quantity) as qty
-  from sales_transactions
+  select destination_branch_code as branch_code, item_name, batch, sum(quantity) as qty
+  from txn
   where order_type = 'BRANCH-TRANSFER' and status = 'RECEIVED' and destination_branch_code is not null
-  group by destination_branch_code, item_code, batch
+  group by 1, 2, 3
 ),
 conv_out as (
-  select branch_code, from_item_code as item_code, from_batch as batch, sum(from_quantity) as qty
+  select branch_code, upper(trim(from_item_name)) as item_name, upper(trim(from_batch)) as batch, sum(from_quantity) as qty
   from stock_conversions
-  group by branch_code, from_item_code, from_batch
+  group by 1, 2, 3
 ),
 conv_in as (
-  select branch_code, to_item_code as item_code, to_batch as batch, sum(to_quantity) as qty
+  select branch_code, upper(trim(to_item_name)) as item_name, upper(trim(to_batch)) as batch, sum(to_quantity) as qty
   from stock_conversions
-  group by branch_code, to_item_code, to_batch
+  group by 1, 2, 3
 ),
-latest_desc as (
-  select distinct on (item_code) item_code, item_description
-  from sales_transactions
-  order by item_code, doc_date desc
+opening as (
+  select branch_code, upper(trim(item_name)) as item_name, upper(trim(batch)) as batch, quantity, as_of_date
+  from opening_stock
 ),
 keys as (
-  select branch_code, item_code, batch from opening_stock
-  union select branch_code, item_code, batch from outward
-  union select branch_code, item_code, batch from inward_transfer
-  union select branch_code, item_code, batch from conv_out
-  union select branch_code, item_code, batch from conv_in
+  select branch_code, item_name, batch from opening
+  union select branch_code, item_name, batch from outward
+  union select branch_code, item_name, batch from inward_transfer
+  union select branch_code, item_name, batch from conv_out
+  union select branch_code, item_name, batch from conv_in
 )
 select
   k.branch_code,
-  k.item_code,
-  coalesce(ld.item_description, k.item_code) as item_description,
+  k.item_name,
   k.batch,
   coalesce(os.quantity, 0) as opening_qty,
   coalesce(it.qty, 0) + coalesce(ci.qty, 0) as inward_qty,
@@ -201,12 +213,11 @@ select
     - coalesce(o.qty, 0) - coalesce(co.qty, 0) as closing_qty,
   os.as_of_date as opening_as_of_date
 from keys k
-left join opening_stock   os on os.branch_code = k.branch_code and os.item_code = k.item_code and os.batch = k.batch
-left join outward         o  on o.branch_code  = k.branch_code and o.item_code  = k.item_code and o.batch  = k.batch
-left join inward_transfer it on it.branch_code = k.branch_code and it.item_code = k.item_code and it.batch = k.batch
-left join conv_out        co on co.branch_code = k.branch_code and co.item_code = k.item_code and co.batch = k.batch
-left join conv_in         ci on ci.branch_code = k.branch_code and ci.item_code = k.item_code and ci.batch = k.batch
-left join latest_desc     ld on ld.item_code   = k.item_code;
+left join opening         os using (branch_code, item_name, batch)
+left join outward         o  using (branch_code, item_name, batch)
+left join inward_transfer it using (branch_code, item_name, batch)
+left join conv_out        co using (branch_code, item_name, batch)
+left join conv_in         ci using (branch_code, item_name, batch);
 
 -- ---------------------------------------------------------------------------
 -- Seed the 17 branches (names must match BRANCH_NAME exactly in your sheet —

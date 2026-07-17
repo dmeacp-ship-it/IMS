@@ -10,7 +10,7 @@ const auth = require('../lib/auth');
 const data = require('../lib/data');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '5mb' })); // bulk opening-stock uploads can be large
 app.use(cookieParser());
 
 /* Wrap an async (req) => result handler into an Express handler with uniform
@@ -125,6 +125,10 @@ app.get('/api/admin/ledger',
 app.post('/api/admin/opening-stock',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.upsertOpeningStock(req.session, req.body); }));
+
+app.post('/api/admin/opening-stock/bulk',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.bulkUpsertOpeningStock(req.session, req.body.rows); }));
 
 app.post('/api/admin/conversion',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
