@@ -190,8 +190,7 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-page="dashboard"><i class="ph ph-gauge"></i><span class="ni-txt">Dashboard</span></div>
-          <div class="ni" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni active" data-page="ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
           <div class="ni" data-page="opening"><i class="ph ph-flag"></i><span class="ni-txt">Opening Stock</span></div>
           <div class="ni" data-page="conversions"><i class="ph ph-scissors"></i><span class="ni-txt">Conversions</span></div>
           <div class="ni" data-page="tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
@@ -225,7 +224,7 @@
     </div>
 
     <div class="content">
-      <div class="stat-row" id="ad-statRow" data-page="dashboard">
+      <div class="stat-row" id="ad-statRow" data-page="ledger">
         <div class="stat-card goto" data-goto="ledger" title="View stock ledger">
           <div class="stat-ic-bubble"><i class="ph ph-buildings"></i></div>
           <div>
@@ -281,75 +280,42 @@
           <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
         </div>
         <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
-        <div style="padding:16px 20px; max-width:720px;">
-          <div class="form-grid">
-            <div class="full">
-              <label>Branch</label>
-              <select id="ad-open-branch"></select>
-            </div>
-            <div class="full">
-              <label>Item name (without VIRGO)</label>
-              <input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220">
-            </div>
-            <div>
-              <label>Batch</label>
-              <input type="text" id="ad-open-batch" placeholder="e.g. A">
-            </div>
-            <div>
-              <label>Opening quantity</label>
-              <input type="number" id="ad-open-qty" min="0" step="1">
-            </div>
-            <div>
-              <label>As of date</label>
-              <input type="date" id="ad-open-date">
-            </div>
+        <div style="padding:16px 20px;">
+          <div class="form-row">
+            <div class="grow"><label>Branch</label><select id="ad-open-branch"></select></div>
+            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+            <div class="shrink"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
+            <div class="shrink"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
+            <div class="shrink"><label>As of date</label><input type="date" id="ad-open-date"></div>
+            <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save</button>
           </div>
           <div class="error-text" id="ad-open-error"></div>
-          <button class="btn btn-primary" id="ad-open-submit"><i class="ph ph-check"></i>Save opening stock</button>
         </div>
       </div>
 
       <div class="panel" id="ad-conversionPanel" data-page="conversions">
         <div class="panel-header"><span><i class="ph ph-scissors"></i>Record conversion</span></div>
-        <div style="padding:16px 20px; max-width:720px;">
-          <div class="form-grid">
-            <div class="full">
-              <label>Branch</label>
-              <select id="ad-conv-branch"></select>
-            </div>
-            <div class="form-sec-ttl"><i class="ph ph-arrow-down"></i>Consume</div>
-            <div class="full">
-              <label>Item name (without VIRGO)</label>
-              <input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
-            </div>
-            <div>
-              <label>Batch</label>
-              <input type="text" id="ad-conv-fromBatch" placeholder="e.g. A">
-            </div>
-            <div>
-              <label>Quantity</label>
-              <input type="number" id="ad-conv-fromQty" min="0" step="1">
-            </div>
-            <div class="form-sec-ttl"><i class="ph ph-arrow-up"></i>Produce</div>
-            <div class="full">
-              <label>Item name (without VIRGO)</label>
-              <input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
-            </div>
-            <div>
-              <label>Batch</label>
-              <input type="text" id="ad-conv-toBatch" placeholder="e.g. B">
-            </div>
-            <div>
-              <label>Quantity</label>
-              <input type="number" id="ad-conv-toQty" min="0" step="1">
-            </div>
-            <div class="full">
-              <label>Notes (optional)</label>
-              <input type="text" id="ad-conv-notes">
-            </div>
+        <div style="padding:16px 20px;">
+          <div class="form-row">
+            <div class="grow"><label>Branch</label><select id="ad-conv-branch"></select></div>
+          </div>
+          <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
+          <div class="form-row">
+            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
+            <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
+            <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
+          </div>
+          <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
+          <div class="form-row">
+            <div class="grow"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
+            <div class="shrink"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
+            <div class="shrink"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
+          </div>
+          <div class="form-row">
+            <div class="grow"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
+            <button class="btn btn-success" id="ad-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
           </div>
           <div class="error-text" id="ad-conv-error"></div>
-          <button class="btn btn-success" id="ad-conv-submit"><i class="ph ph-check"></i>Save conversion</button>
         </div>
         <div class="panel-header"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
         <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
