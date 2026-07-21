@@ -33,11 +33,21 @@ where order_type = 'CUSTOMER ORDER'
 drop materialized view if exists op_planning cascade;
 create materialized view op_planning as
 with stock as (
-  select branch_code, item_name,
-         sum(closing_qty)    as closing_qty,
-         sum(in_transit_qty) as in_transit_qty
+  select branch_code, item_name, sum(closing_qty) as closing_qty
   from item_stock_ledger_mat
   group by branch_code, item_name
+),
+-- Incoming stock still in transit = branch transfers dispatched to this branch
+-- but not yet received. (The ledger matview does not carry this column.)
+in_transit as (
+  select destination_branch_code as branch_code,
+         upper(trim(regexp_replace(item_description, '^\s*VIRGO\s+', '', 'i'))) as item_name,
+         sum(quantity) as in_transit_qty
+  from sales_transactions
+  where order_type = 'BRANCH-TRANSFER'
+    and status = 'IN_TRANSIT'
+    and destination_branch_code is not null
+  group by 1, 2
 ),
 -- One representative attribute row per branch+item (latest sale wins).
 attrs as (
@@ -73,13 +83,14 @@ select
   b.branch_grade,
   n.n_rating,
   n.n_grade,
-  coalesce(s.closing_qty, 0)    as current_stock,
-  coalesce(s.in_transit_qty, 0) as in_transit
+  coalesce(s.closing_qty, 0)     as current_stock,
+  coalesce(it.in_transit_qty, 0) as in_transit
 from op_branch_grade b
 left join op_national_rating n on n.n_id = b.family || '-' || b.variant
-left join stock  s  on s.branch_code  = b.branch_code and s.item_name  = b.item_name
-left join attrs  a  on a.branch_code  = b.branch_code and a.item_name  = b.item_name
-left join ageing ag on ag.branch_code = b.branch_code and ag.item_name = b.item_name;
+left join stock      s  on s.branch_code  = b.branch_code and s.item_name  = b.item_name
+left join in_transit it on it.branch_code = b.branch_code and it.item_name = b.item_name
+left join attrs      a  on a.branch_code  = b.branch_code and a.item_name  = b.item_name
+left join ageing    ag on ag.branch_code = b.branch_code and ag.item_name = b.item_name;
 
 create unique index if not exists op_planning_key on op_planning (branch_code, item_name);
 create index if not exists op_planning_branch on op_planning (branch_code);
