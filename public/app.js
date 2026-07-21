@@ -826,16 +826,61 @@ function gradeBadge(g) {
   return '<span class="op-grade ' + cls + '">' + esc(g) + '</span>';
 }
 
+/* ---- Cap sheet (ACP) policy: National rating × Branch grade → target stock
+   coverage %. Values taken verbatim from the ACP tab. 'MIN' = keep a minimum
+   level; 'REQ' = order only if required (no auto target). --------------------*/
+var OP_MATRIX = {
+  'A+': { A1: 100, A2: 100, B1: 70, B2: 60, C: 40,    D: 20 },
+  'A':  { A1: 90,  A2: 90,  B1: 70, B2: 50, C: 40,    D: 20 },
+  'B':  { A1: 70,  A2: 70,  B1: 60, B2: 40, C: 30,    D: 20 },
+  'C':  { A1: 40,  A2: 30,  B1: 20, B2: 20, C: 'MIN', D: 'MIN' },
+  'D':  { A1: 20,  A2: 20,  B1: 10, B2: 10, C: 'MIN', D: 'MIN' }
+};
+
+// Coverage: the % applies to expected demand over this many days. Branch sales
+// are the last 6 months (~183 days), so demand for the coverage window =
+// branch_sales_qty * (COVERAGE_DAYS / 183).  60 days ≈ the ACP "DAYS 60".
+var OP_COVERAGE_DAYS = 60;
+
+// Returns { pct, targetText, targetStock, orderQty } for one planning row.
+function opRecommend(r) {
+  var natl = r.n_grade;               // A+/A/B/C/D
+  var bg = r.branch_grade;            // A1/A2/B1/B2/C/D/CUS
+  var out = { pct: null, targetText: 'REQ', targetStock: null, orderQty: null };
+
+  if (bg === 'CUS' || !natl || !OP_MATRIX[natl] || !(bg in OP_MATRIX[natl])) {
+    return out; // CUS / new / no national rating → order only if required
+  }
+  var v = OP_MATRIX[natl][bg];
+  if (v === 'MIN') { out.targetText = 'MIN'; return out; }
+
+  out.pct = v;
+  var demand = (Number(r.branch_sales_qty) || 0) * (OP_COVERAGE_DAYS / 183);
+  var target = Math.round((v / 100) * demand);
+  var stock = Math.round(Number(r.current_stock) || 0);
+  out.targetStock = target;
+  out.targetText = target + '';
+  out.orderQty = Math.max(0, target - stock);
+  return out;
+}
+
 function renderPlanningRows(rows) {
   if (rows.length === 0) {
     return emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.');
   }
   var head = '<th scope="col">Branch</th><th scope="col">Item</th><th scope="col">Size</th>'
     + '<th scope="col">National</th><th scope="col">Branch Grade</th>'
-    + '<th scope="col">Branch Sales</th><th scope="col">Current Stock</th>';
+    + '<th scope="col">Branch Sales</th><th scope="col">Current Stock</th>'
+    + '<th scope="col">Target</th><th scope="col">Order Qty</th>';
   var body = rows.map(function (r) {
     var stock = Math.round(r.current_stock || 0);
     var natl = r.n_grade ? (gradeBadge(r.n_grade) + ' <span class="op-score">' + (r.n_rating != null ? r.n_rating : '') + '</span>') : gradeBadge(null);
+    var rec = opRecommend(r);
+    var targetCell = rec.pct != null
+      ? ('<strong>' + rec.targetStock + '</strong> <span class="op-score">' + rec.pct + '%</span>')
+      : ('<span class="op-tag">' + (rec.targetText === 'MIN' ? 'MIN Level' : 'If Req.') + '</span>');
+    var orderCell = rec.orderQty == null ? '—'
+      : (rec.orderQty > 0 ? '<strong>' + rec.orderQty + '</strong>' : '0');
     return '<tr>'
       + '<td class="mono">' + esc(r.branch_code) + '</td>'
       + '<td class="mono">' + esc((r.family || '') + '-' + (r.variant || '')) + '</td>'
@@ -844,6 +889,8 @@ function renderPlanningRows(rows) {
       + '<td>' + gradeBadge(r.branch_grade) + '</td>'
       + '<td class="mono">' + Math.round(r.branch_sales_qty || 0) + '</td>'
       + '<td class="mono' + (stock < 0 ? ' td-negative' : (stock > 0 ? ' td-positive' : '')) + '"><strong>' + stock + '</strong></td>'
+      + '<td class="mono">' + targetCell + '</td>'
+      + '<td class="mono' + (rec.orderQty > 0 ? ' td-negative' : '') + '">' + orderCell + '</td>'
       + '</tr>';
   }).join('');
   return '<table role="table" aria-label="Order planning"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
@@ -1159,6 +1206,7 @@ var AdminView = {
     document.getElementById('ad-planSearch').addEventListener('input', AdminView.filterPlanning);
     document.getElementById('ad-planBranchFilter').addEventListener('change', AdminView.filterPlanning);
     document.getElementById('ad-planGradeFilter').addEventListener('change', AdminView.filterPlanning);
+    document.getElementById('ad-planNeedsOrder').addEventListener('change', AdminView.filterPlanning);
     document.getElementById('ad-planRefreshBtn').addEventListener('click', function () {
       var btn = document.getElementById('ad-planRefreshBtn');
       var icon = document.getElementById('ad-planRefreshIcon');
@@ -1176,9 +1224,13 @@ var AdminView = {
       var rows = AdminView.planningRows;
       if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
       rows = filterPlanningRows(rows, term, grade);
-      var headers = ['Branch', 'Family', 'Variant', 'Size', 'National Rating', 'National Score', 'Branch Grade', 'Branch Sales Qty', 'Current Stock'];
+      var headers = ['Branch', 'Family', 'Variant', 'Size', 'National Rating', 'National Score', 'Branch Grade', 'Branch Sales Qty', 'Current Stock', 'Target %', 'Target Stock', 'Order Qty'];
       exportToCSV('order_planning.csv', headers, rows, function (r) {
-        return [r.branch_code, r.family, r.variant, r.size, r.n_grade || '', r.n_rating != null ? r.n_rating : '', r.branch_grade, Math.round(r.branch_sales_qty || 0), Math.round(r.current_stock || 0)];
+        var rec = opRecommend(r);
+        return [r.branch_code, r.family, r.variant, r.size, r.n_grade || '', r.n_rating != null ? r.n_rating : '', r.branch_grade, Math.round(r.branch_sales_qty || 0), Math.round(r.current_stock || 0),
+          rec.pct != null ? rec.pct : (rec.targetText === 'MIN' ? 'MIN' : 'If Req.'),
+          rec.targetStock != null ? rec.targetStock : '',
+          rec.orderQty != null ? rec.orderQty : ''];
       });
     });
 
@@ -1730,9 +1782,11 @@ var AdminView = {
     var term = document.getElementById('ad-planSearch').value;
     var grade = document.getElementById('ad-planGradeFilter').value;
     var branchFilter = document.getElementById('ad-planBranchFilter').value;
+    var needsOrder = document.getElementById('ad-planNeedsOrder').checked;
     var rows = AdminView.planningRows;
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
     rows = filterPlanningRows(rows, term, grade);
+    if (needsOrder) rows = rows.filter(function (r) { return opRecommend(r).orderQty > 0; });
     document.getElementById('ad-planTableWrap').innerHTML = renderPlanningRows(rows);
   },
 
