@@ -153,6 +153,16 @@ app.post('/api/admin/ledger/refresh',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.refreshLedgerSnapshot(req.session); }));
 
+/* ------------------------------ ORDER PLANNING -------------------------- */
+
+app.get('/api/order-planning',
+  auth.requireRole(),
+  handle(function (req) { return data.getOrderPlanning(req.session); }));
+
+app.post('/api/admin/order-planning/refresh',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.refreshOrderPlanning(req.session); }));
+
 app.post('/api/admin/opening-stock',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.upsertOpeningStock(req.session, req.body); }));

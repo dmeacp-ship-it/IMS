@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=7.4">
+  <link rel="stylesheet" href="/styles.css?v=7.5">
 </head>
 <body>
 
@@ -333,6 +333,7 @@
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
           <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="planning" data-tooltip="Order Planning"><i class="ph ph-chart-line-up"></i><span class="ni-txt">Order Planning</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
           <div class="ni" data-page="audit" data-tooltip="Audit"><i class="ph ph-shield-check"></i><span class="ni-txt">Audit</span></div>
         </nav>
@@ -406,6 +407,29 @@
           </div>
         </div>
         <div id="ad-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
+      </div>
+
+      <div class="panel" id="ad-planningPanel" data-page="planning" style="overflow: visible;">
+        <div class="panel-header">
+          <span><i class="ph ph-chart-line-up"></i>Order planning — ratings &amp; grades</span>
+          <div class="panel-header-tools">
+            <input type="text" id="ad-planSearch" placeholder="Search item, size, or branch…">
+            <select id="ad-planBranchFilter"><option value="">All branches</option></select>
+            <select id="ad-planGradeFilter">
+              <option value="">All grades</option>
+              <option value="A1">A1</option><option value="A2">A2</option>
+              <option value="B1">B1</option><option value="B2">B2</option>
+              <option value="C">C</option><option value="D">D</option>
+              <option value="CUS">CUS</option>
+            </select>
+            <button class="btn btn-ghost btn-small" id="ad-planRefreshBtn" title="Rebuild planning ratings now"><i class="ph ph-arrows-clockwise" id="ad-planRefreshIcon"></i>Refresh</button>
+            <button class="btn btn-ghost btn-small" id="ad-planExportBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export</button>
+          </div>
+        </div>
+        <div style="padding: 10px 20px 0; font-size: 12px; color: var(--sub); line-height: 1.5;">
+          <strong>National rating</strong> ranks an item across all branches (customers, purchase count &amp; frequency). <strong>Branch grade</strong> ranks it by sales share within this branch's product family. An item can be strong nationally but low at a branch, or vice-versa.
+        </div>
+        <div id="ad-planTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-transferPanel" data-page="transfers">
@@ -973,6 +997,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=8.9"></script>
+  <script src="/app.js?v=9.0"></script>
 </body>
 </html>

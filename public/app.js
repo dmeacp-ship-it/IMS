@@ -812,6 +812,54 @@ function filterLedgerRows(rows, term, opts) {
   });
 }
 
+/* ---------------------------- ORDER PLANNING ---------------------------- */
+
+function gradeBadge(g) {
+  if (!g) return '<span class="op-grade op-g-none">—</span>';
+  var cls = 'op-g-d';
+  if (g === 'A+' || g === 'A1') cls = 'op-g-a1';
+  else if (g === 'A' || g === 'A2') cls = 'op-g-a2';
+  else if (g === 'B1' || g === 'B') cls = 'op-g-b1';
+  else if (g === 'B2') cls = 'op-g-b2';
+  else if (g === 'C') cls = 'op-g-c';
+  else if (g === 'CUS') cls = 'op-g-cus';
+  return '<span class="op-grade ' + cls + '">' + esc(g) + '</span>';
+}
+
+function renderPlanningRows(rows) {
+  if (rows.length === 0) {
+    return emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.');
+  }
+  var head = '<th scope="col">Branch</th><th scope="col">Item</th><th scope="col">Size</th>'
+    + '<th scope="col">National</th><th scope="col">Branch Grade</th>'
+    + '<th scope="col">Branch Sales</th><th scope="col">Current Stock</th>';
+  var body = rows.map(function (r) {
+    var stock = Math.round(r.current_stock || 0);
+    var natl = r.n_grade ? (gradeBadge(r.n_grade) + ' <span class="op-score">' + (r.n_rating != null ? r.n_rating : '') + '</span>') : gradeBadge(null);
+    return '<tr>'
+      + '<td class="mono">' + esc(r.branch_code) + '</td>'
+      + '<td class="mono">' + esc((r.family || '') + '-' + (r.variant || '')) + '</td>'
+      + '<td class="mono">' + esc(r.size || '—') + '</td>'
+      + '<td>' + natl + '</td>'
+      + '<td>' + gradeBadge(r.branch_grade) + '</td>'
+      + '<td class="mono">' + Math.round(r.branch_sales_qty || 0) + '</td>'
+      + '<td class="mono' + (stock < 0 ? ' td-negative' : (stock > 0 ? ' td-positive' : '')) + '"><strong>' + stock + '</strong></td>'
+      + '</tr>';
+  }).join('');
+  return '<table role="table" aria-label="Order planning"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+}
+
+function filterPlanningRows(rows, term, grade) {
+  term = (term || '').trim().toLowerCase();
+  return rows.filter(function (r) {
+    if (grade && r.branch_grade !== grade) return false;
+    if (!term) return true;
+    return (r.item_name || '').toLowerCase().indexOf(term) !== -1
+      || (r.size || '').toLowerCase().indexOf(term) !== -1
+      || (r.branch_code || '').toLowerCase().indexOf(term) !== -1;
+  });
+}
+
 /* ------------------------------- LOGIN ---------------------------------- */
 var Login = {
   init: function () {
@@ -1100,12 +1148,39 @@ var HodView = {
 var AdminView = {
   allBranches: [],
   ledgerRows: [],
+  planningRows: [],
 
   init: function () {
     document.getElementById('ad-open-date').value = new Date().toISOString().slice(0, 10);
 
     document.getElementById('ad-ledgerSearch').addEventListener('input', AdminView.filterLedger);
     document.getElementById('ad-ledgerBranchFilter').addEventListener('change', AdminView.filterLedger);
+
+    document.getElementById('ad-planSearch').addEventListener('input', AdminView.filterPlanning);
+    document.getElementById('ad-planBranchFilter').addEventListener('change', AdminView.filterPlanning);
+    document.getElementById('ad-planGradeFilter').addEventListener('change', AdminView.filterPlanning);
+    document.getElementById('ad-planRefreshBtn').addEventListener('click', function () {
+      var btn = document.getElementById('ad-planRefreshBtn');
+      var icon = document.getElementById('ad-planRefreshIcon');
+      btn.disabled = true;
+      if (icon) icon.classList.add('spin');
+      apiPost('/api/admin/order-planning/refresh', {})
+        .then(function () { toast('success', 'Planning ratings rebuilt.'); AdminView.loadPlanning(); })
+        .catch(function (err) { toast('error', 'Refresh failed: ' + err.message); })
+        .finally(function () { btn.disabled = false; if (icon) icon.classList.remove('spin'); });
+    });
+    document.getElementById('ad-planExportBtn').addEventListener('click', function () {
+      var term = document.getElementById('ad-planSearch').value;
+      var grade = document.getElementById('ad-planGradeFilter').value;
+      var branchFilter = document.getElementById('ad-planBranchFilter').value;
+      var rows = AdminView.planningRows;
+      if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
+      rows = filterPlanningRows(rows, term, grade);
+      var headers = ['Branch', 'Family', 'Variant', 'Size', 'National Rating', 'National Score', 'Branch Grade', 'Branch Sales Qty', 'Current Stock'];
+      exportToCSV('order_planning.csv', headers, rows, function (r) {
+        return [r.branch_code, r.family, r.variant, r.size, r.n_grade || '', r.n_rating != null ? r.n_rating : '', r.branch_grade, Math.round(r.branch_sales_qty || 0), Math.round(r.current_stock || 0)];
+      });
+    });
 
     AdminView.initAudit();
     AdminView.initTransfers();
@@ -1426,6 +1501,7 @@ var AdminView = {
 
       // Load dependent datasets after branches are populated
       AdminView.loadLedger();
+      AdminView.loadPlanning();
     }).catch(AdminView.showError);
 
     AdminView.loadConversions();
@@ -1598,12 +1674,14 @@ var AdminView = {
     document.getElementById('ad-open-branch').innerHTML = optionsHtml;
     document.getElementById('ad-conv-branch').innerHTML = optionsHtml;
     document.getElementById('ad-ledgerBranchFilter').innerHTML = '<option value="">All branches</option>' + optionsHtml;
+    document.getElementById('ad-planBranchFilter').innerHTML = '<option value="">All branches</option>' + optionsHtml;
 
     AdminView.customOpenBranch = makeCustomSelect('ad-open-branch', rawOptions, 'Select branch...');
     AdminView.customConvBranch = makeCustomSelect('ad-conv-branch', rawOptions, 'Select branch...');
 
     var filterOptions = [{ value: '', text: 'All branches' }].concat(rawOptions);
     AdminView.customLedgerBranchFilter = makeCustomSelect('ad-ledgerBranchFilter', filterOptions, 'All branches');
+    AdminView.customPlanBranchFilter = makeCustomSelect('ad-planBranchFilter', filterOptions, 'All branches');
   },
 
   loadLedger: function () {
@@ -1633,6 +1711,29 @@ var AdminView = {
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
     rows = filterLedgerRows(rows, term, { showBranch: true });
     document.getElementById('ad-ledgerTableWrap').innerHTML = renderLedgerRows(rows, { showBranch: true });
+  },
+
+  loadPlanning: function () {
+    document.getElementById('ad-planTableWrap').innerHTML = skeletonBlock(120);
+    apiGet('/api/order-planning')
+      .then(function (rows) {
+        AdminView.planningRows = rows;
+        AdminView.filterPlanning();
+      })
+      .catch(function (err) {
+        document.getElementById('ad-planTableWrap').innerHTML =
+          emptyState('ph-warning-circle', 'Could not load order planning', err.message || 'Try refreshing the page.');
+      });
+  },
+
+  filterPlanning: function () {
+    var term = document.getElementById('ad-planSearch').value;
+    var grade = document.getElementById('ad-planGradeFilter').value;
+    var branchFilter = document.getElementById('ad-planBranchFilter').value;
+    var rows = AdminView.planningRows;
+    if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
+    rows = filterPlanningRows(rows, term, grade);
+    document.getElementById('ad-planTableWrap').innerHTML = renderPlanningRows(rows);
   },
 
   loadConversions: function () {
