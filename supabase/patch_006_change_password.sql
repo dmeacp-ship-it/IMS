@@ -1,0 +1,5 @@
+-- Patch 006: Self-Service Password Management
+-- Note: Security validations and hashing are processed server-side in Node.js
+-- using Node's native pgcrypto/SHA-256 library to maintain parity with legacy user profiles.
+-- The backend performs direct upserts on the 'user_profiles' table using Supabase service client.
+-- No additional stored procedures are required for this deployment.
