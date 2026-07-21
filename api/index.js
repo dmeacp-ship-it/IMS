@@ -289,7 +289,7 @@ app.get('*', function (req, res) {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// Scheduled hourly synchronization is handled by Vercel Cron hitting
+// Scheduled daily synchronization is handled by Vercel Cron hitting
 // /api/cron/sync (see vercel.json "crons"). A setInterval here would not run
 // reliably on serverless (instances aren't long-lived) and could double-fire
 // alongside the cron job on a warm instance, so it is intentionally omitted.
