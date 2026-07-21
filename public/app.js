@@ -1348,34 +1348,6 @@ var AdminView = {
           });
       });
     });
-    document.getElementById('ad-bulkApplyBtn').addEventListener('click', function () {
-      var btn = document.getElementById('ad-bulkApplyBtn');
-      var branchCode = document.getElementById('ad-bulkBranchSelect').value;
-      if (!branchCode) {
-        toast('info', 'Please select a destination branch for bulk tagging.');
-        return;
-      }
-      var checkedBoxes = document.querySelectorAll('.tag-row-checkbox:checked');
-      if (checkedBoxes.length === 0) {
-        toast('info', 'Please select at least one transaction to tag.');
-        return;
-      }
-      var ids = Array.from(checkedBoxes).map(function (cb) { return cb.getAttribute('data-id'); });
-
-      btn.disabled = true;
-      btn.innerHTML = '<i class="ph ph-spinner spin"></i>Saving…';
-
-      apiPost('/api/admin/needs-tagging/bulk', { transactionIds: ids, branchCode: branchCode })
-        .then(function () {
-          toast('success', 'Successfully updated ' + ids.length + ' transactions.');
-          AdminView.loadAll();
-        })
-        .catch(AdminView.showError)
-        .finally(function () {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="ph ph-check"></i>Apply to Selected';
-        });
-    });
     document.getElementById('ad-refreshSyncLogsBtn').addEventListener('click', AdminView.loadSyncLogs);
     document.getElementById('ad-refreshActivityLogsBtn').addEventListener('click', AdminView.loadActivityLogs);
 
@@ -1453,7 +1425,6 @@ var AdminView = {
       }
 
       // Load dependent datasets after branches are populated
-      apiGet('/api/admin/needs-tagging').then(AdminView.renderTagging).catch(AdminView.showError);
       AdminView.loadLedger();
     }).catch(AdminView.showError);
 
@@ -1627,16 +1598,12 @@ var AdminView = {
     document.getElementById('ad-open-branch').innerHTML = optionsHtml;
     document.getElementById('ad-conv-branch').innerHTML = optionsHtml;
     document.getElementById('ad-ledgerBranchFilter').innerHTML = '<option value="">All branches</option>' + optionsHtml;
-    document.getElementById('ad-bulkBranchSelect').innerHTML = '<option value="">Bulk Assign...</option>' + optionsHtml;
 
     AdminView.customOpenBranch = makeCustomSelect('ad-open-branch', rawOptions, 'Select branch...');
     AdminView.customConvBranch = makeCustomSelect('ad-conv-branch', rawOptions, 'Select branch...');
-    
+
     var filterOptions = [{ value: '', text: 'All branches' }].concat(rawOptions);
     AdminView.customLedgerBranchFilter = makeCustomSelect('ad-ledgerBranchFilter', filterOptions, 'All branches');
-
-    var bulkOptions = [{ value: '', text: 'Bulk Assign...' }].concat(rawOptions);
-    AdminView.customBulkBranchSelect = makeCustomSelect('ad-bulkBranchSelect', bulkOptions, 'Bulk Assign...');
   },
 
   loadLedger: function () {
@@ -1698,17 +1665,6 @@ var AdminView = {
     document.getElementById('ad-totalBranches').textContent = data.totalBranches;
     document.getElementById('ad-inTransitCount').textContent = data.inTransitCount;
     document.getElementById('ad-receivedCount').textContent = data.receivedCount;
-    document.getElementById('ad-needsTaggingCount').textContent = data.needsTaggingCount;
-
-    var navBadge = document.getElementById('ad-nav-badge-tagging');
-    if (navBadge) {
-      if (data.needsTaggingCount > 0) {
-        navBadge.style.display = '';
-        navBadge.textContent = data.needsTaggingCount;
-      } else {
-        navBadge.style.display = 'none';
-      }
-    }
 
     var transferRows = data.transfers.slice(0, 50).map(function (t) {
       var badge = t.status === 'RECEIVED'
@@ -1825,118 +1781,6 @@ var AdminView = {
           });
       };
       reader.readAsText(file);
-    });
-  },
-
-  renderTagging: function (rows) {
-    var toolbar = document.getElementById('ad-taggingBulkToolbar');
-    if (rows.length === 0) {
-      if (toolbar) toolbar.style.display = 'none';
-      document.getElementById('ad-taggingTableWrap').innerHTML =
-        emptyState('ph-check-circle', 'All tagged', 'No transfers need destination tagging right now.');
-      return;
-    }
-
-    if (toolbar) {
-      toolbar.style.display = 'flex';
-      document.getElementById('ad-taggingSelectedCount').textContent = '0 transactions selected';
-      document.getElementById('ad-bulkApplyBtn').disabled = true;
-      if (AdminView.customBulkBranchSelect) {
-        AdminView.customBulkBranchSelect.setValue('');
-      }
-    }
-
-    var branchOptions = AdminView.allBranches.map(function (b) {
-      return '<option value="' + esc(b.code) + '">' + esc(b.name) + '</option>';
-    }).join('');
-
-    var tableRows = rows.map(function (r) {
-      return '<tr data-id="' + r.id + '">'
-        + '<td style="text-align: center;"><input type="checkbox" class="tag-row-checkbox" data-id="' + r.id + '"></td>'
-        + '<td class="mono">' + esc(r.docnum) + '</td>'
-        + '<td>' + esc(displayItemName(r.item_description)) + '</td>'
-        + '<td>' + esc(r.customer_name || '—') + '</td>'
-        + '<td class="mono">' + Math.round(r.quantity) + '</td>'
-        + '<td>' + esc(r.source_branch_code) + '</td>'
-        + '<td><select class="tag-branch-select"><option value="">Select branch…</option>' + branchOptions + '</select></td>'
-        + '<td><button class="btn btn-primary btn-small tag-save-btn" data-id="' + r.id + '">Save</button></td>'
-        + '</tr>';
-    }).join('');
-
-    document.getElementById('ad-taggingTableWrap').innerHTML =
-      '<table role="table" aria-label="Needs destination tagging">'
-      + '<thead><tr>'
-      + '<th scope="col" style="width: 40px; text-align: center;"><input type="checkbox" id="ad-tagSelectAll"></th>'
-      + '<th scope="col">Docnum</th>'
-      + '<th scope="col">Item</th>'
-      + '<th scope="col">Customer</th>'
-      + '<th scope="col">Qty</th>'
-      + '<th scope="col">From</th>'
-      + '<th scope="col">Assign destination</th>'
-      + '<th scope="col"></th>'
-      + '</tr></thead>'
-      + '<tbody>' + tableRows + '</tbody></table>';
-      
-    // Convert all row selects to custom select dropdowns
-    var branchOptionsData = AdminView.allBranches.map(function (b) {
-      return { value: b.code, text: b.name };
-    });
-    document.querySelectorAll('#ad-taggingTableWrap .tag-branch-select').forEach(function (selectEl, idx) {
-      var selectId = 'ad-row-select-' + idx;
-      selectEl.id = selectId;
-      makeCustomSelect(selectId, branchOptionsData, 'Select branch…');
-    });
-
-    function updateSelectedState() {
-      var allCheckboxes = document.querySelectorAll('.tag-row-checkbox');
-      var checkedBoxes = document.querySelectorAll('.tag-row-checkbox:checked');
-      
-      document.getElementById('ad-taggingSelectedCount').textContent = checkedBoxes.length + ' transactions selected';
-      document.getElementById('ad-bulkApplyBtn').disabled = checkedBoxes.length === 0;
-
-      var selectAll = document.getElementById('ad-tagSelectAll');
-      if (selectAll) {
-        selectAll.checked = allCheckboxes.length > 0 && checkedBoxes.length === allCheckboxes.length;
-        selectAll.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allCheckboxes.length;
-      }
-    }
-
-    var selectAllEl = document.getElementById('ad-tagSelectAll');
-    if (selectAllEl) {
-      selectAllEl.addEventListener('change', function () {
-        var checked = selectAllEl.checked;
-        document.querySelectorAll('.tag-row-checkbox').forEach(function (cb) {
-          cb.checked = checked;
-        });
-        updateSelectedState();
-      });
-    }
-
-    document.querySelectorAll('.tag-row-checkbox').forEach(function (cb) {
-      cb.addEventListener('change', updateSelectedState);
-    });
-
-    document.querySelectorAll('.tag-save-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-id');
-        var row = btn.closest('tr');
-        var select = row.querySelector('.tag-branch-select');
-        var branchCode = select.value;
-        if (!branchCode) { toast('info', 'Choose a destination branch first.'); return; }
-
-        btn.disabled = true;
-        btn.textContent = 'Saving…';
-        apiPost('/api/admin/resolve-destination', { transactionId: id, branchCode: branchCode })
-          .then(function () {
-            toast('success', 'Destination saved.');
-            AdminView.loadAll();
-          })
-          .catch(function (err) {
-            toast('error', err.message);
-            btn.disabled = false;
-            btn.textContent = 'Save';
-          });
-      });
     });
   },
 

@@ -128,18 +128,6 @@ app.post('/api/admin/users/active',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.setUserActive(req.session, req.body.userId, req.body.active); }));
 
-app.get('/api/admin/needs-tagging',
-  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function () { return data.getNeedsTaggingRows(); }));
-
-app.post('/api/admin/resolve-destination',
-  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function (req) { return data.resolveDestination(req.session, req.body.transactionId, req.body.branchCode); }));
-
-app.post('/api/admin/needs-tagging/bulk',
-  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function (req) { return data.resolveDestinationsBulk(req.session, req.body.transactionIds, req.body.branchCode); }));
-
 app.get('/api/admin/transfers/export',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function () { return data.getBranchTransfersForExport(); }));

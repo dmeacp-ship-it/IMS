@@ -1110,7 +1110,3 @@ html.theme-transition::view-transition-new(root) {
     filter: blur(0px);
   }
 }
-
-#ad-taggingTableWrap {
-  padding-bottom: 240px;
-}

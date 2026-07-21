@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=7.3">
+  <link rel="stylesheet" href="/styles.css?v=7.4">
 </head>
 <body>
 
@@ -333,7 +333,6 @@
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
           <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
-          <div class="ni" data-page="tagging" data-tooltip="Needs Tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
           <div class="ni" data-page="audit" data-tooltip="Audit"><i class="ph ph-shield-check"></i><span class="ni-txt">Audit</span></div>
         </nav>
@@ -391,13 +390,6 @@
             <div class="stat-label">Received (last 200)</div>
           </div>
         </div>
-        <div class="stat-card goto" data-goto="tagging" title="Resolve destination tagging" style="--stat-color: var(--red)">
-          <div class="stat-ic-bubble ic-red"><i class="ph ph-tag"></i></div>
-          <div>
-            <div class="stat-value mono cr" id="ad-needsTaggingCount">—</div>
-            <div class="stat-label">Needs destination tagging</div>
-          </div>
-        </div>
       </div>
 
 
@@ -414,18 +406,6 @@
           </div>
         </div>
         <div id="ad-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
-      </div>
-
-      <div class="panel" id="ad-taggingPanel" data-page="tagging" style="overflow: visible;">
-        <div class="panel-header"><span><i class="ph ph-tag"></i>Needs destination tagging</span></div>
-        <div id="ad-taggingBulkToolbar" style="padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: var(--s-12); background: var(--surface); position: relative; z-index: 10;">
-          <span style="font-size: 13.5px; font-weight: 500; color: var(--sub); margin-right: auto;" id="ad-taggingSelectedCount">0 transactions selected</span>
-          <div style="width: 250px;">
-            <select id="ad-bulkBranchSelect"><option value="">Bulk Assign...</option></select>
-          </div>
-          <button class="btn btn-primary btn-small" id="ad-bulkApplyBtn" disabled><i class="ph ph-check"></i>Apply to Selected</button>
-        </div>
-        <div id="ad-taggingTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-transferPanel" data-page="transfers">
@@ -993,6 +973,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=8.8"></script>
+  <script src="/app.js?v=8.9"></script>
 </body>
 </html>
