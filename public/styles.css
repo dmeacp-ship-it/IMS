@@ -1148,4 +1148,5 @@ html.theme-transition::view-transition-new(root) {
   text-align: center;
 }
 .op-matrix thead th, .op-matrix tbody th { background: rgba(127,127,127,0.08); font-weight: 700; }
+.op-manual { color: var(--sub); background: rgba(127,127,127,0.05); text-align: center; }
 
