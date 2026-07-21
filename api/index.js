@@ -161,6 +161,10 @@ app.get('/api/admin/ledger',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function () { return data.getAllItemLedger(); }));
 
+app.post('/api/admin/ledger/refresh',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.refreshLedgerSnapshot(req.session); }));
+
 app.post('/api/admin/opening-stock',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.upsertOpeningStock(req.session, req.body); }));

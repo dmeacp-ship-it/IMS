@@ -1110,6 +1110,25 @@ var AdminView = {
     AdminView.initAudit();
     AdminView.initTransfers();
 
+    document.getElementById('ad-refreshLedgerBtn').addEventListener('click', function () {
+      var btn = document.getElementById('ad-refreshLedgerBtn');
+      var icon = document.getElementById('ad-refreshLedgerIcon');
+      btn.disabled = true;
+      if (icon) icon.classList.add('spin');
+      apiPost('/api/admin/ledger/refresh', {})
+        .then(function () {
+          toast('success', 'Ledger snapshot refreshed.');
+          AdminView.loadLedger();
+        })
+        .catch(function (err) {
+          toast('error', 'Refresh failed: ' + err.message);
+        })
+        .finally(function () {
+          btn.disabled = false;
+          if (icon) icon.classList.remove('spin');
+        });
+    });
+
     document.getElementById('ad-exportLedgerBtn').addEventListener('click', function () {
       var term = document.getElementById('ad-ledgerSearch').value;
       var branchFilter = document.getElementById('ad-ledgerBranchFilter').value;
