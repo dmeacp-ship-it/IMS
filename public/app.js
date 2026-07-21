@@ -826,37 +826,24 @@ function gradeBadge(g) {
   return '<span class="op-grade ' + cls + '">' + esc(g) + '</span>';
 }
 
-// City name from a branch code, e.g. "DELHI-BRANCH" -> "Delhi".
-function opCity(code) {
-  var city = String(code || '').split('-')[0].toLowerCase();
-  return city ? city.charAt(0).toUpperCase() + city.slice(1) : '';
-}
-
-// "Branch ID" composite, matching the planning sheet exactly:
-//   "Delhi - ACP Industries Depot-ALFA3030-VL911-3660X1220"
-function opBranchId(r) {
-  return opCity(r.branch_code) + ' - ACP Industries Depot-' + (r.item_name || '');
-}
-
-// "N Rating" formatted like the sheet: "A+ (10.0)".
-function opNRating(r) {
-  if (!r.n_grade) return '—';
-  return r.n_grade + ' (' + (r.n_rating != null ? Number(r.n_rating).toFixed(1) : '') + ')';
-}
-
-// Mirrors the "New Grade" tab: Branch ID | N. ID | N Rating | New Branch Grade.
 function renderPlanningRows(rows) {
   if (rows.length === 0) {
     return emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.');
   }
-  var head = '<th scope="col">Branch ID</th><th scope="col">N. ID</th>'
-    + '<th scope="col">N Rating</th><th scope="col">New Branch Grade</th>';
+  var head = '<th scope="col">Branch</th><th scope="col">Item</th><th scope="col">Size</th>'
+    + '<th scope="col">National</th><th scope="col">Branch Grade</th>'
+    + '<th scope="col">Branch Sales</th><th scope="col">Current Stock</th>';
   var body = rows.map(function (r) {
+    var stock = Math.round(r.current_stock || 0);
+    var natl = r.n_grade ? (gradeBadge(r.n_grade) + ' <span class="op-score">' + (r.n_rating != null ? r.n_rating : '') + '</span>') : gradeBadge(null);
     return '<tr>'
-      + '<td class="mono">' + esc(opBranchId(r)) + '</td>'
+      + '<td class="mono">' + esc(r.branch_code) + '</td>'
       + '<td class="mono">' + esc((r.family || '') + '-' + (r.variant || '')) + '</td>'
-      + '<td>' + esc(opNRating(r)) + '</td>'
+      + '<td class="mono">' + esc(r.size || '—') + '</td>'
+      + '<td>' + natl + '</td>'
       + '<td>' + gradeBadge(r.branch_grade) + '</td>'
+      + '<td class="mono">' + Math.round(r.branch_sales_qty || 0) + '</td>'
+      + '<td class="mono' + (stock < 0 ? ' td-negative' : (stock > 0 ? ' td-positive' : '')) + '"><strong>' + stock + '</strong></td>'
       + '</tr>';
   }).join('');
   return '<table role="table" aria-label="Order planning"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
@@ -868,8 +855,8 @@ function filterPlanningRows(rows, term, grade) {
     if (grade && r.branch_grade !== grade) return false;
     if (!term) return true;
     return (r.item_name || '').toLowerCase().indexOf(term) !== -1
-      || ((r.family || '') + '-' + (r.variant || '')).toLowerCase().indexOf(term) !== -1
-      || opBranchId(r).toLowerCase().indexOf(term) !== -1;
+      || (r.size || '').toLowerCase().indexOf(term) !== -1
+      || (r.branch_code || '').toLowerCase().indexOf(term) !== -1;
   });
 }
 
@@ -1189,9 +1176,9 @@ var AdminView = {
       var rows = AdminView.planningRows;
       if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
       rows = filterPlanningRows(rows, term, grade);
-      var headers = ['Branch ID', 'N. ID', 'N Rating', 'New Branch Grade'];
+      var headers = ['Branch', 'Family', 'Variant', 'Size', 'National Rating', 'National Score', 'Branch Grade', 'Branch Sales Qty', 'Current Stock'];
       exportToCSV('order_planning.csv', headers, rows, function (r) {
-        return [opBranchId(r), (r.family || '') + '-' + (r.variant || ''), opNRating(r), r.branch_grade];
+        return [r.branch_code, r.family, r.variant, r.size, r.n_grade || '', r.n_rating != null ? r.n_rating : '', r.branch_grade, Math.round(r.branch_sales_qty || 0), Math.round(r.current_stock || 0)];
       });
     });
 
