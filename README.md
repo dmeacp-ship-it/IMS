@@ -1,4 +1,4 @@
-# Virgo ACP — Branch Transfer Tracker (IMS)
+ # Virgo ACP — Branch Transfer Tracker (IMS)
 
 Node/Express web app for tracking branch-to-branch stock transfers, deployable
 on Vercel. Backed by Supabase (source of truth); the Google Sheet + bound Apps
