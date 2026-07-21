@@ -13,6 +13,16 @@ const app = express();
 app.use(express.json({ limit: '5mb' })); // bulk opening-stock uploads can be large
 app.use(cookieParser());
 
+app.use(function (req, res, next) {
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  res.setHeader('Content-Security-Policy', `default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${supabaseUrl};`);
+  next();
+});
+
 /* Wrap an async (req) => result handler into an Express handler with uniform
    error → JSON mapping. */
 function handle(fn) {
@@ -21,7 +31,13 @@ function handle(fn) {
       const out = await fn(req);
       res.json(out);
     } catch (e) {
-      res.status(e.status || 500).json({ error: e.message || 'Server error' });
+      let status = e.status || 500;
+      let msg = e.message || 'Server error';
+      if (msg.indexOf('Concurrency Lock:') !== -1) {
+        status = 400;
+        msg = msg.replace(/^.*?Concurrency Lock:/, 'Concurrency Lock:');
+      }
+      res.status(status).json({ error: msg });
     }
   };
 }
@@ -33,16 +49,23 @@ app.post('/api/login', async function (req, res) {
     const body = req.body || {};
     const result = await auth.login(body.username, body.password);
     if (!result.success) {
+      await data.logActivity(body.username, 'Login Failed', result.message);
       return res.status(401).json({ error: result.message });
     }
     res.cookie(auth.COOKIE_NAME, result.token, auth.cookieOptions());
+    await data.logActivity(body.username, 'Login Success', 'Role: ' + result.role);
     res.json({ success: true, role: result.role });
   } catch (e) {
+    console.error('Login error:', e);
     res.status(500).json({ error: 'Login failed. Please try again.' });
   }
 });
 
-app.post('/api/logout', function (req, res) {
+app.post('/api/logout', async function (req, res) {
+  const s = auth.getSession(req);
+  if (s) {
+    await data.logActivity(s.username, 'Logout', 'User logged out');
+  }
   res.clearCookie(auth.COOKIE_NAME, { path: '/' });
   res.json({ success: true });
 });
@@ -79,6 +102,10 @@ app.post('/api/branch/conversion',
     return data.createConversion(req.session, Object.assign({}, req.body, { branchCode: req.session.branchCode }));
   }));
 
+app.get('/api/branch/conversions',
+  auth.requireRole('BRANCH'),
+  handle(function (req) { return data.getConversions(req.session.branchCode); }));
+
 /* ------------------------------- ADMIN ---------------------------------- */
 
 app.get('/api/admin/dashboard',
@@ -107,7 +134,19 @@ app.get('/api/admin/needs-tagging',
 
 app.post('/api/admin/resolve-destination',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function (req) { return data.resolveDestination(req.body.transactionId, req.body.branchCode); }));
+  handle(function (req) { return data.resolveDestination(req.session, req.body.transactionId, req.body.branchCode); }));
+
+app.post('/api/admin/needs-tagging/bulk',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.resolveDestinationsBulk(req.session, req.body.transactionIds, req.body.branchCode); }));
+
+app.get('/api/admin/transfers/export',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getBranchTransfersForExport(); }));
+
+app.post('/api/admin/transfers/bulk-status',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.bulkUpdateTransferStatus(req.session, req.body.rows); }));
 
 app.get('/api/admin/hod-assignments',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
@@ -116,7 +155,7 @@ app.get('/api/admin/hod-assignments',
 // Managing HOD → branch assignments is Super Admin only (matches original design).
 app.post('/api/admin/hod-assignments',
   auth.requireRole('SUPER_ADMIN'),
-  handle(function (req) { return data.assignHodBranches(req.body.hodUserId, req.body.branchCodes); }));
+  handle(function (req) { return data.assignHodBranches(req.session, req.body.hodUserId, req.body.branchCodes); }));
 
 app.get('/api/admin/ledger',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
@@ -137,6 +176,94 @@ app.post('/api/admin/conversion',
 app.get('/api/admin/conversions',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.getConversions(req.query.branchCode); }));
+
+app.get('/api/admin/settings',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getAdminSettings(); }));
+
+app.post('/api/admin/settings',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.saveAdminSettings(req.session, req.body); }));
+
+app.post('/api/admin/sync',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.syncGoogleSheet((req.session ? req.session.username : 'SYSTEM'), req.body.mode); }));
+
+app.get('/api/cron/sync', async function (req, res) {
+  try {
+    // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` when the
+    // CRON_SECRET env var is set. The old `x-vercel-cron` header check was
+    // spoofable — any caller can set an arbitrary request header — so we
+    // verify a shared secret instead. Requires CRON_SECRET in the environment
+    // (both locally and in the Vercel project settings).
+    const secret = process.env.CRON_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'CRON_SECRET is not configured.' });
+    }
+    const authHeader = req.headers['authorization'] || '';
+    if (authHeader !== 'Bearer ' + secret) {
+      return res.status(401).json({ error: 'Unauthorized.' });
+    }
+    const result = await data.syncGoogleSheet('SYSTEM (Auto Sync)');
+    res.json(result);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/activity-logs',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getActivityLogs(); }));
+
+app.get('/api/admin/sync-logs',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getSyncLogs(); }));
+
+app.post('/api/admin/clear-database-data',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) { return data.clearAllDatabaseData(req.session, req.body.password); }));
+
+app.post('/api/user/change-password',
+  auth.requireRole(),
+  handle(function (req) {
+    return data.changeUserPassword(req.session, req.body.currentPassword, req.body.newPassword);
+  }));
+
+app.post('/api/reconciliation',
+  auth.requireRole(),
+  handle(function (req) {
+    return data.submitReconciliation(req.session, req.body);
+  }));
+
+app.get('/api/reconciliations',
+  auth.requireRole(),
+  handle(function (req) {
+    return data.getReconciliations(req.session);
+  }));
+
+app.post('/api/reconciliations/bulk',
+  auth.requireRole(),
+  handle(function (req) {
+    return data.submitBulkReconciliations(req.session, req.body.rows);
+  }));
+
+app.get('/api/variance-report',
+  auth.requireRole(),
+  handle(function (req) {
+    return data.getVarianceReport(req.session);
+  }));
+
+app.post('/api/variance/apply',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) {
+    return data.applyStockAdjustment(req.session, req.body);
+  }));
+
+app.post('/api/variance/apply-all',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function (req) {
+    return data.applyAllAdjustments(req.session, req.body);
+  }));
 
 /* -------------------------------- HOD ----------------------------------- */
 
@@ -161,5 +288,10 @@ app.use(express.static(publicDir));
 app.get('*', function (req, res) {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
+
+// Scheduled hourly synchronization is handled by Vercel Cron hitting
+// /api/cron/sync (see vercel.json "crons"). A setInterval here would not run
+// reliably on serverless (instances aren't long-lived) and could double-fire
+// alongside the cron job on a warm instance, so it is intentionally omitted.
 
 module.exports = app;

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="/styles.css?v=2.2">
+  <link rel="stylesheet" href="/styles.css?v=7.3">
 </head>
 <body>
 
@@ -54,7 +54,6 @@
 <!-- ======================= BRANCH VIEW ======================= -->
 <div id="view-branch" class="app-view shell" style="display:none;">
   <aside class="sb">
-    <div>
       <div class="sb-brand">
         <div class="sb-logo"><svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.5"/><rect x="6.5" y="9.6" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.75"/><rect x="4.2" y="15.2" width="15" height="5.2" rx="1.4" fill="#fff"/></svg></div>
         <div>
@@ -65,12 +64,14 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
-          <div class="ni active" data-page="overview" data-tooltip="Overview"><i class="ph ph-gauge"></i><span class="ni-txt">Overview</span></div>
+          <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Incoming Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
-          <div class="ni" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
+          <div class="ni" data-page="audit" data-tooltip="Audit"><i class="ph ph-shield-check"></i><span class="ni-txt">Audit</span></div>
+        </nav>
+        <nav class="sb-nav" style="margin-top: auto; padding-top: 0;" role="navigation" aria-label="Settings menu">
+          <div class="ni" data-page="settings" data-tooltip="Settings"><i class="ph ph-gear"></i><span class="ni-txt">Settings</span></div>
         </nav>
       </div>
-    </div>
     <div class="sb-bottom-wrapper">
       <div class="sb-user">
         <div class="av" id="br-avatar">–</div>
@@ -78,7 +79,9 @@
           <div class="sb-uname" id="br-userName">—</div>
           <span class="rtag rt-BRANCH">BRANCH</span>
         </div>
-        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+        <div style="margin-left: auto; display: flex; gap: 4px; align-items: center;">
+          <button class="logout-btn" title="Sign out" style="margin-left: 0;"><i class="ph ph-sign-out"></i></button>
+        </div>
       </div>
     </div>
   </aside>
@@ -96,7 +99,7 @@
     </div>
 
     <div class="content" role="main">
-      <div class="stat-row" id="br-statRow" data-page="overview">
+      <div class="stat-row" id="br-statRow" data-page="ledger">
         <div class="stat-card goto" data-goto="transfers" title="View incoming transfers" style="--stat-color: var(--orange)">
           <div class="stat-ic-bubble ic-orange"><i class="ph ph-truck"></i></div>
           <div>
@@ -113,6 +116,7 @@
         </div>
       </div>
 
+
       <div class="panel" id="br-panel" data-page="transfers">
         <div class="panel-header"><span><i class="ph ph-truck"></i>Incoming transfers</span></div>
         <div id="br-tableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
@@ -123,53 +127,189 @@
           <span><i class="ph ph-stack"></i>Stock ledger</span>
           <div class="panel-header-tools">
             <input type="text" id="br-ledgerSearch" placeholder="Search item name or batch…">
+            <button class="btn btn-ghost btn-small" id="br-exportLedgerBtn"><i class="ph ph-download-simple"></i>Export CSV</button>
             <button class="btn btn-success btn-small" id="br-recordConversionBtn"><i class="ph ph-scissors"></i>Record conversion</button>
           </div>
         </div>
         <div id="br-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
+
+      <div class="panel" id="br-settingsPanel" data-page="settings" style="display:none;">
+        <div class="panel-header">
+          <span><i class="ph ph-gear"></i>Settings</span>
+        </div>
+        <div style="padding: var(--s-24); max-width: 480px; display: flex; flex-direction: column; gap: var(--s-24);">
+          <div>
+            <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16);"><i class="ph ph-lock-key"></i>Change Password</div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Current Password</label>
+                <input type="password" id="br-pwd-current" placeholder="Enter current password" style="width:100%;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">New Password</label>
+                <input type="password" id="br-pwd-new" placeholder="Enter new password" style="width:100%;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Confirm New Password</label>
+                <input type="password" id="br-pwd-confirm" placeholder="Confirm new password" style="width:100%;">
+              </div>
+              <div class="error-text" id="br-pwd-error" style="margin-top:0;"></div>
+              <button class="btn btn-primary" id="br-pwd-submitBtn" style="align-self: flex-start;"><i class="ph ph-check"></i>Change Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="br-auditPanel" data-page="audit" style="display:none; overflow: visible;">
+        <div class="panel-header">
+          <span><i class="ph ph-shield-check"></i>Stock Audit & Reconciliation</span>
+        </div>
+        
+        <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-24);">
+          <!-- Top Section: Split Form (Single vs Bulk) -->
+          <div style="display: flex; gap: var(--s-32); flex-wrap: wrap;">
+            <!-- Left: Single Audit Entry -->
+            <div style="flex: 1.2; min-width: 320px; display: flex; flex-direction: column; gap: var(--s-16); padding-right: var(--s-32); border-right: 1px solid var(--border);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-pencil-simple" style="margin-right:6px; color:var(--accent);"></i>Single Reconciliation Entry</div>
+              <p style="font-size:12.5px; color:var(--sub); margin:0;">
+                Select item and batch to perform a physical stock audit check for your branch.
+              </p>
+              
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Item Name</label>
+                <select id="br-audit-item" style="width:100%;"></select>
+              </div>
+              
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Batch Code</label>
+                <select id="br-audit-batch" style="width:100%;"></select>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Ledger Closing Qty</label>
+                  <input type="text" id="br-audit-ledgerQty" readonly style="width:100%; background:rgba(255,255,255,0.03); cursor:not-allowed;" placeholder="0">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Physical Counted Qty</label>
+                  <input type="number" id="br-audit-physicalQty" placeholder="Enter physical stock" style="width:100%;">
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border);">
+                <span style="font-size:13px; font-weight:600; color:var(--sub);">Discrepancy Variance:</span>
+                <span id="br-audit-variance" style="font-family:var(--font-ui); font-weight:700; font-size:16px;">—</span>
+              </div>
+
+              <div class="error-text" id="br-audit-error" style="margin-top:0;"></div>
+              <button class="btn btn-success" id="br-audit-submit" style="width: 100%; justify-content: center;"><i class="ph ph-check"></i>Submit Reconciliation</button>
+            </div>
+
+            <!-- Right: Bulk Audit Upload -->
+            <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-file-csv" style="margin-right:6px; color:var(--orange);"></i>Bulk Reconciliation Upload (CSV)</div>
+              <p style="font-size:12.5px; color:var(--sub); margin:0; line-height:1.5;">
+                Download the CSV template, fill in physical counts for your branch items, and upload here.
+              </p>
+              
+              <div style="display:flex; flex-direction:column; gap:12px; margin-top: 8px;">
+                <button class="btn btn-ghost" id="br-audit-template" style="justify-content: flex-start; width: fit-content;"><i class="ph ph-download-simple"></i>Download CSV Template</button>
+                
+                <div style="border: 2px dashed var(--border); border-radius: 8px; padding: var(--s-24); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(255,255,255,0.01);">
+                  <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
+                  <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
+                  <input type="file" id="br-audit-fileInput" accept=".csv" style="display: none;">
+                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('br-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <div id="br-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
+                </div>
+                
+                <button class="btn btn-primary" id="br-audit-uploadBtn" style="justify-content: center;" disabled><i class="ph ph-upload-simple"></i>Upload & Reconcile</button>
+                <div id="br-audit-uploadResult" style="font-size:12px; line-height:1.4; white-space:pre-wrap;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Recent Reconciliation History -->
+          <div style="border-top: 1px solid var(--border); padding-top: var(--s-24);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-clock-counter-clockwise" style="margin-right:6px; color:var(--muted);"></i>Audit History (Recent Reconciliations)</div>
+              <button class="btn btn-ghost btn-small" id="br-audit-refreshHistory"><i class="ph ph-arrows-clockwise"></i>Refresh Logs</button>
+            </div>
+            <div id="br-audit-historyWrap" class="table-scroll">
+              <div class="skeleton" style="height:120px; border-radius:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Item-wise Variance Report -->
+          <div style="border-top: 1px solid var(--border); padding-top: var(--s-24); margin-top: var(--s-24);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-scales" style="margin-right:6px; color:var(--muted);"></i>Item-wise Variance Report</div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-small" id="br-vr-export"><i class="ph ph-download-simple"></i>Export CSV</button>
+                <button class="btn btn-ghost btn-small" id="br-vr-refresh"><i class="ph ph-arrows-clockwise"></i>Refresh</button>
+              </div>
+            </div>
+            <div id="br-vr-summary" class="vr-summary"></div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 16px 0;">
+              <input type="text" id="br-vr-search" placeholder="Search item or batch…" style="flex: 1; min-width: 200px; height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13.5px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); cursor: pointer;"><input type="checkbox" id="br-vr-discOnly"> Discrepancies only</label>
+            </div>
+            <div id="br-vr-tableWrap" class="table-scroll"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="br-convOverlay" class="overlay" style="display:none;">
-    <div class="modal">
+    <div class="modal large">
       <div class="modal-header">
         <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
       </div>
-      <div class="modal-body">
-        <div class="grid-12">
-          <div class="form-sec-ttl"><i class="ph ph-arrow-down"></i>Consume</div>
-          <div class="span-12">
-            <label>Item name (without VIRGO)</label>
-            <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220">
+      <div class="modal-body split">
+        <!-- Left Side: Form (Fixed Width) -->
+        <div style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--s-16); overflow-y: auto; padding-right: 4px;">
+          <div class="grid-12">
+            <div class="form-sec-ttl" style="margin-top: 0;"><i class="ph ph-arrow-down"></i>Consume</div>
+            <div class="span-6">
+              <label>Item name (without VIRGO)</label>
+              <input type="text" id="br-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220" list="br-items-datalist">
+            </div>
+            <div class="span-3">
+              <label>Batch</label>
+               <input type="text" id="br-conv-fromBatch" placeholder="e.g. A" list="br-batches-datalist">
+            </div>
+            <div class="span-3">
+              <label>Quantity</label>
+              <input type="number" id="br-conv-fromQty" min="0" step="1">
+            </div>
+            <div class="form-sec-ttl" style="margin-top: 0;"><i class="ph ph-arrow-up"></i>Produce</div>
+            <div class="span-6">
+              <label>Item name (without VIRGO)</label>
+              <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220" list="br-items-datalist">
+            </div>
+            <div class="span-3">
+              <label>Batch</label>
+               <input type="text" id="br-conv-toBatch" placeholder="e.g. B" list="br-batches-datalist">
+            </div>
+            <div class="span-3">
+              <label>Quantity</label>
+              <input type="number" id="br-conv-toQty" min="0" step="1">
+            </div>
+            <div class="span-12">
+              <label>Notes (optional)</label>
+              <input type="text" id="br-conv-notes">
+            </div>
           </div>
-          <div class="span-6">
-            <label>Batch</label>
-            <input type="text" id="br-conv-fromBatch" placeholder="e.g. A">
-          </div>
-          <div class="span-6">
-            <label>Quantity</label>
-            <input type="number" id="br-conv-fromQty" min="0" step="1">
-          </div>
-          <div class="form-sec-ttl"><i class="ph ph-arrow-up"></i>Produce</div>
-          <div class="span-12">
-            <label>Item name (without VIRGO)</label>
-            <input type="text" id="br-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220">
-          </div>
-          <div class="span-6">
-            <label>Batch</label>
-            <input type="text" id="br-conv-toBatch" placeholder="e.g. B">
-          </div>
-          <div class="span-6">
-            <label>Quantity</label>
-            <input type="number" id="br-conv-toQty" min="0" step="1">
-          </div>
-          <div class="span-12">
-            <label>Notes (optional)</label>
-            <input type="text" id="br-conv-notes">
-          </div>
+          <div class="error-text" id="br-conv-error" style="margin-bottom: 0;"></div>
         </div>
-        <div class="error-text" id="br-conv-error"></div>
+
+        <!-- Right Side: Recent Conversions (Flexible Width) -->
+        <div style="flex: 1; min-width: 0; border-left: 1px solid var(--border); padding-left: var(--s-32); display: flex; flex-direction: column; overflow-y: hidden;">
+          <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:0; border-bottom: none;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
+          <div id="br-conversionsTableWrap" class="table-scroll" style="flex: 1; overflow-y: auto; max-height: none;"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
+        </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" id="br-conv-cancel">Cancel</button>
@@ -182,7 +322,6 @@
 <!-- ======================= ADMIN VIEW ======================= -->
 <div id="view-admin" class="app-view shell" style="display:none;">
   <aside class="sb">
-    <div>
       <div class="sb-brand">
         <div class="sb-logo"><svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.5"/><rect x="6.5" y="9.6" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.75"/><rect x="4.2" y="15.2" width="15" height="5.2" rx="1.4" fill="#fff"/></svg></div>
         <div>
@@ -196,10 +335,13 @@
           <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
           <div class="ni" data-page="tagging" data-tooltip="Needs Tagging"><i class="ph ph-tag"></i><span class="ni-txt">Needs Tagging</span><span class="ni-bd" id="ad-nav-badge-tagging" style="display:none;">0</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
-          <div class="ni" data-page="users" data-tooltip="Users"><i class="ph ph-users"></i><span class="ni-txt">Users</span></div>
+          <div class="ni" data-page="audit" data-tooltip="Audit"><i class="ph ph-shield-check"></i><span class="ni-txt">Audit</span></div>
+        </nav>
+        <nav class="sb-nav" style="margin-top: auto; padding-top: 0;" role="navigation" aria-label="Settings menu">
+          <div class="ni" data-page="settings" data-tooltip="Settings"><i class="ph ph-gear"></i><span class="ni-txt">Settings</span></div>
         </nav>
       </div>
-    </div>
+
     <div class="sb-bottom-wrapper">
       <div class="sb-user">
         <div class="av" id="ad-avatar">–</div>
@@ -207,7 +349,9 @@
           <div class="sb-uname" id="ad-userName">—</div>
           <span class="rtag rt-ADMIN" id="ad-rtag">ADMIN</span>
         </div>
-        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+        <div style="margin-left: auto; display: flex; gap: 4px; align-items: center;">
+          <button class="logout-btn" title="Sign out" style="margin-left: 0;"><i class="ph ph-sign-out"></i></button>
+        </div>
       </div>
     </div>
   </aside>
@@ -219,8 +363,8 @@
         <span>All branches</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small" id="ad-headerSyncBtn" title="Sync Sheet Data"><i class="ph ph-arrows-clockwise" id="ad-headerSyncIcon"></i></button>
         <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
-        <span class="role-pill" id="ad-rolePill">ADMIN</span>
       </div>
     </div>
 
@@ -256,76 +400,335 @@
         </div>
       </div>
 
+
       <div class="panel" id="ad-ledgerPanel" data-page="ledger">
         <div class="panel-header">
           <span><i class="ph ph-stack"></i>Stock ledger — all branches</span>
           <div class="panel-header-tools">
             <input type="text" id="ad-ledgerSearch" placeholder="Search item name, batch, or branch…">
             <select id="ad-ledgerBranchFilter"><option value="">All branches</option></select>
-            <button class="btn btn-ghost btn-small" id="ad-openOpeningBtn"><i class="ph ph-flag"></i>Opening Stock</button>
-            <button class="btn btn-success btn-small" id="ad-openConversionBtn"><i class="ph ph-scissors"></i>Record Conversion</button>
+            <button class="btn btn-ghost btn-small" id="ad-exportLedgerBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export</button>
+            <button class="btn btn-ghost btn-small" id="ad-openOpeningBtn" title="Opening Stock"><i class="ph ph-flag"></i>Opening</button>
+            <button class="btn btn-success btn-small" id="ad-openConversionBtn" title="Record Conversion"><i class="ph ph-scissors"></i>Convert</button>
           </div>
         </div>
         <div id="ad-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
-      <div class="panel" id="ad-taggingPanel" data-page="tagging">
+      <div class="panel" id="ad-taggingPanel" data-page="tagging" style="overflow: visible;">
         <div class="panel-header"><span><i class="ph ph-tag"></i>Needs destination tagging</span></div>
+        <div id="ad-taggingBulkToolbar" style="padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: var(--s-12); background: var(--surface); position: relative; z-index: 10;">
+          <span style="font-size: 13.5px; font-weight: 500; color: var(--sub); margin-right: auto;" id="ad-taggingSelectedCount">0 transactions selected</span>
+          <div style="width: 250px;">
+            <select id="ad-bulkBranchSelect"><option value="">Bulk Assign...</option></select>
+          </div>
+          <button class="btn btn-primary btn-small" id="ad-bulkApplyBtn" disabled><i class="ph ph-check"></i>Apply to Selected</button>
+        </div>
         <div id="ad-taggingTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
       <div class="panel" id="ad-transferPanel" data-page="transfers">
-        <div class="panel-header"><span><i class="ph ph-truck"></i>Recent branch transfers</span></div>
+        <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
+          <span><i class="ph ph-truck"></i>Branch transfers</span>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-ghost btn-small" id="ad-tr-export"><i class="ph ph-download-simple"></i>Export all (CSV)</button>
+            <input type="file" id="ad-tr-fileInput" accept=".csv" style="display: none;">
+            <button class="btn btn-ghost btn-small" id="ad-tr-chooseFile"><i class="ph ph-file-arrow-up"></i>Choose CSV…</button>
+            <span id="ad-tr-fileName" style="font-size: 12px; color: var(--sub);">No file chosen</span>
+            <button class="btn btn-primary btn-small" id="ad-tr-uploadBtn" disabled><i class="ph ph-upload-simple"></i>Update status</button>
+          </div>
+        </div>
+        <div style="padding: 12px 20px 0; font-size: 12px; color: var(--sub); line-height: 1.5;">
+          Export all transfers, edit the <strong>STATUS</strong> column (values: <strong>In Transit</strong> or <strong>Received</strong>), then re-upload to bulk-update. Rows are matched on <strong>DOCNUM + ITEM_CODE + BATCH</strong>; only changed rows are updated. The table below shows a recent sample only.
+        </div>
+        <div id="ad-tr-result" style="padding: 8px 20px 0; font-size: 12px; line-height: 1.5; white-space: pre-wrap;"></div>
         <div id="ad-transferTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
 
-      <div class="panel" id="ad-userPanel" data-page="users">
+      <div class="panel" id="ad-auditPanel" data-page="audit" style="display:none; overflow: visible;">
         <div class="panel-header">
-          <span><i class="ph ph-users"></i>Users</span>
-          <button class="btn btn-primary btn-small" id="ad-addUserBtn"><i class="ph ph-user-plus"></i>Add user</button>
+          <span><i class="ph ph-shield-check"></i>Stock Audit & Reconciliation</span>
         </div>
-        <div id="ad-userTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
+        
+        <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-24);">
+          <!-- Top Section: Split Form (Single vs Bulk) -->
+          <div style="display: flex; gap: var(--s-32); flex-wrap: wrap;">
+            <!-- Left: Single Audit Entry -->
+            <div style="flex: 1.2; min-width: 320px; display: flex; flex-direction: column; gap: var(--s-16); padding-right: var(--s-32); border-right: 1px solid var(--border);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-pencil-simple" style="margin-right:6px; color:var(--accent);"></i>Single Reconciliation Entry</div>
+              <p style="font-size:12.5px; color:var(--sub); margin:0;">
+                Select branch, item, and batch to perform a physical stock audit check.
+              </p>
+              
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Branch</label>
+                <select id="ad-audit-branch" style="width:100%;"></select>
+              </div>
+              
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Item Name</label>
+                <select id="ad-audit-item" style="width:100%;"></select>
+              </div>
+              
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Batch Code</label>
+                <select id="ad-audit-batch" style="width:100%;"></select>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Ledger Closing Qty</label>
+                  <input type="text" id="ad-audit-ledgerQty" readonly style="width:100%; background:rgba(255,255,255,0.03); cursor:not-allowed;" placeholder="0">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Physical Counted Qty</label>
+                  <input type="number" id="ad-audit-physicalQty" placeholder="Enter physical stock" style="width:100%;">
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border);">
+                <span style="font-size:13px; font-weight:600; color:var(--sub);">Discrepancy Variance:</span>
+                <span id="ad-audit-variance" style="font-family:var(--font-ui); font-weight:700; font-size:16px;">—</span>
+              </div>
+
+              <div class="error-text" id="ad-audit-error" style="margin-top:0;"></div>
+              <button class="btn btn-success" id="ad-audit-submit" style="width: 100%; justify-content: center;"><i class="ph ph-check"></i>Submit Reconciliation</button>
+            </div>
+
+            <!-- Right: Bulk Audit Upload -->
+            <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-file-csv" style="margin-right:6px; color:var(--orange);"></i>Bulk Reconciliation Upload (CSV)</div>
+              <p style="font-size:12.5px; color:var(--sub); margin:0; line-height:1.5;">
+                Download the spreadsheet template, fill in physical counts for multiple items/batches at once, and upload the completed CSV here.
+              </p>
+              
+              <div style="display:flex; flex-direction:column; gap:12px; margin-top: 8px;">
+                <button class="btn btn-ghost" id="ad-audit-template" style="justify-content: flex-start; width: fit-content;"><i class="ph ph-download-simple"></i>Download CSV Template</button>
+                
+                <div style="border: 2px dashed var(--border); border-radius: 8px; padding: var(--s-24); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(255,255,255,0.01);">
+                  <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
+                  <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
+                  <input type="file" id="ad-audit-fileInput" accept=".csv" style="display: none;">
+                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('ad-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <div id="ad-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
+                </div>
+                
+                <button class="btn btn-primary" id="ad-audit-uploadBtn" style="justify-content: center;" disabled><i class="ph ph-upload-simple"></i>Upload & Reconcile</button>
+                <div id="ad-audit-uploadResult" style="font-size:12px; line-height:1.4; white-space:pre-wrap;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Recent Reconciliation History -->
+          <div style="border-top: 1px solid var(--border); padding-top: var(--s-24);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-clock-counter-clockwise" style="margin-right:6px; color:var(--muted);"></i>Audit History (Recent Reconciliations)</div>
+              <button class="btn btn-ghost btn-small" id="ad-audit-refreshHistory"><i class="ph ph-arrows-clockwise"></i>Refresh Logs</button>
+            </div>
+            <div id="ad-audit-historyWrap" class="table-scroll">
+              <div class="skeleton" style="height:120px; border-radius:12px;"></div>
+            </div>
+          </div>
+
+          <!-- Item-wise Variance Report -->
+          <div style="border-top: 1px solid var(--border); padding-top: var(--s-24); margin-top: var(--s-24);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: var(--s-16);">
+              <div style="font-size: 14px; font-weight: 700; color: var(--text);"><i class="ph ph-scales" style="margin-right:6px; color:var(--muted);"></i>Item-wise Variance Report</div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-success btn-small" id="ad-vr-applyAll" style="display:none;"><i class="ph ph-check-circle"></i>Apply all shown</button>
+                <button class="btn btn-ghost btn-small" id="ad-vr-export"><i class="ph ph-download-simple"></i>Export CSV</button>
+                <button class="btn btn-ghost btn-small" id="ad-vr-refresh"><i class="ph ph-arrows-clockwise"></i>Refresh</button>
+              </div>
+            </div>
+            <div id="ad-vr-summary" class="vr-summary"></div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 16px 0;">
+              <input type="text" id="ad-vr-search" placeholder="Search item, batch, or branch…" style="flex: 1; min-width: 200px; height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13.5px;">
+              <select id="ad-vr-branchFilter" style="height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13.5px;"><option value="">All branches</option></select>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sub); cursor: pointer;"><input type="checkbox" id="ad-vr-discOnly"> Discrepancies only</label>
+            </div>
+            <div id="ad-vr-tableWrap" class="table-scroll"></div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+
+      <div class="panel" id="ad-settingsPanel" data-page="settings" style="overflow: visible;">
+        <div class="panel-header" style="flex-direction: column; align-items: stretch; gap: 0; padding-bottom: 0;">
+          <span style="padding-bottom: 12px;"><i class="ph ph-gear"></i>Settings</span>
+          <div id="ad-settingsTabs" style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin: 0 -24px; padding: 0 24px;">
+            <button class="settings-tab active" data-settings-tab="connector"><i class="ph ph-plugs-connected"></i>Data Connector</button>
+            <button class="settings-tab" data-settings-tab="users"><i class="ph ph-users"></i>User Management</button>
+            <button class="settings-tab" data-settings-tab="sync-logs"><i class="ph ph-list-bullets"></i>Sync Logs</button>
+            <button class="settings-tab" data-settings-tab="activity"><i class="ph ph-shield-check"></i>Activity Trail</button>
+            <button class="settings-tab" data-settings-tab="security"><i class="ph ph-lock-key"></i>Security</button>
+          </div>
+        </div>
+
+        <!-- TAB: Data Connector -->
+        <div class="settings-page active" id="ad-stab-connector">
+          <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-24);">
+            <div>
+              <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16);"><i class="ph ph-google-logo"></i>Google Sheet Configuration</div>
+              <p style="font-size: 13.5px; color: var(--sub); line-height: 1.6; margin: 0 0 16px 0;">
+                Configure the central Google Sheet ID and Tab Name here. Make sure the sheet is shared as <strong>"Anyone with the link can view"</strong> so the app can pull data from it.
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label style="font-size: 12px; font-weight: 500; color: var(--sub); display: block;">Google Sheet ID</label>
+                  <input type="text" id="ad-settings-sheetId" placeholder="e.g. 1aBcDeFgHiJkLmNoPqRsTuVwXyZ..." style="width: 100%;">
+                </div>
+                <div style="display: flex; gap: var(--s-16); flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 12px; font-weight: 500; color: var(--sub); display: block;">Sales Transactions Tab Name</label>
+                    <input type="text" id="ad-settings-sheetName" placeholder="e.g. RAW_DATA" style="width: 100%;">
+                  </div>
+                  <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 12px; font-weight: 500; color: var(--sub); display: block;">Sales Returns Tab Name</label>
+                    <input type="text" id="ad-settings-returnsSheetName" placeholder="e.g. RAW_DATA_SALE_RETURN" style="width: 100%;">
+                  </div>
+                </div>
+                <button class="btn btn-primary" id="ad-settings-saveSheet" style="height: 42px; align-self: flex-start; margin-top: 4px;"><i class="ph ph-floppy-disk"></i>Save Settings</button>
+              </div>
+            </div>
+            <div style="border-top: 1px solid var(--border); padding-top: var(--s-24);">
+              <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16);"><i class="ph ph-arrows-clockwise"></i>Manual Sync</div>
+              <p style="font-size: 13.5px; color: var(--sub); line-height: 1.6; margin: 0 0 16px 0;">
+                Trigger a manual sync to pull the latest data from the Google Sheet. Auto-sync runs every hour in the background.
+              </p>
+              <div style="display: flex; align-items: center; gap: var(--s-12); flex-wrap: wrap;">
+                <button class="btn btn-success" id="ad-settings-syncBtn" style="height: 42px;"><i class="ph ph-arrows-clockwise"></i>Sync Sheet Data Now</button>
+                <div id="ad-settings-syncStatus" style="font-size: 13px; color: var(--sub); font-weight: 500; height: 42px; display: flex; align-items: center;"></div>
+              </div>
+            </div>
+            
+            <div style="border-top: 1px solid var(--border); padding-top: var(--s-24);">
+              <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16); color: var(--red);"><i class="ph ph-warning" style="color: var(--red);"></i>Danger Zone</div>
+              <p style="font-size: 13.5px; color: var(--sub); line-height: 1.6; margin: 0 0 16px 0;">
+                Wipe all synced transaction data, sales returns, opening stock, recorded conversions, and physical stock reconciliations from the Supabase database. This action is permanent and cannot be undone. Re-enter your password to confirm.
+              </p>
+              <div style="display: flex; align-items: center; gap: var(--s-12); flex-wrap: wrap;">
+                <input type="password" id="ad-settings-clearPassword" placeholder="Your password" autocomplete="off" style="height: 42px; max-width: 220px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13.5px;">
+                <button class="btn" id="ad-settings-clearBtn" style="height: 42px; background-color: var(--red); color: white; border: none;"><i class="ph ph-trash"></i>Clear All Supabase Data</button>
+                <div id="ad-settings-clearStatus" style="font-size: 13px; color: var(--red); font-weight: 500; height: 42px; display: flex; align-items: center;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: User Management -->
+        <div class="settings-page" id="ad-stab-users" style="display:none;">
+          <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-16);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px;">Active User Accounts</div>
+                <div style="font-size: 13px; color: var(--sub);">Manage system users, roles, and branch assignments.</div>
+              </div>
+              <button class="btn btn-primary btn-small" id="ad-addUserBtn"><i class="ph ph-user-plus"></i>Add user</button>
+            </div>
+            <div id="ad-userTableWrap" class="table-scroll" style="max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--r);"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
+          </div>
+        </div>
+
+        <!-- TAB: Sync Logs -->
+        <div class="settings-page" id="ad-stab-sync-logs" style="display:none;">
+          <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-16);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px;">Sync History Logs</div>
+                <div style="font-size: 13px; color: var(--sub);">Track every manual and automatic data sync run.</div>
+              </div>
+              <button class="btn btn-ghost btn-small" id="ad-refreshSyncLogsBtn" title="Refresh"><i class="ph ph-arrows-clockwise"></i>Refresh</button>
+            </div>
+            <div id="ad-syncLogsWrap" style="max-height: 500px; overflow-y: auto; font-size: 12.5px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: var(--r); padding: var(--s-16);">
+              <div style="color: var(--muted); text-align: center; padding: 24px 0;">No logs loaded.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Activity Trail -->
+        <div class="settings-page" id="ad-stab-activity" style="display:none;">
+          <div style="padding: var(--s-24); display: flex; flex-direction: column; gap: var(--s-16);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px;">System Activity Trail</div>
+                <div style="font-size: 13px; color: var(--sub);">Audit log of all critical user actions across the system.</div>
+              </div>
+              <button class="btn btn-ghost btn-small" id="ad-refreshActivityLogsBtn" title="Refresh"><i class="ph ph-arrows-clockwise"></i>Refresh</button>
+            </div>
+            <div id="ad-activityLogsWrap" style="max-height: 500px; overflow-y: auto; font-size: 12.5px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: var(--r); padding: var(--s-16);">
+              <div style="color: var(--muted); text-align: center; padding: 24px 0;">No activity trail loaded.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: Security -->
+        <div class="settings-page" id="ad-stab-security" style="display:none;">
+          <div style="padding: var(--s-24); max-width: 480px; display: flex; flex-direction: column; gap: var(--s-16);">
+            <div>
+              <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16);"><i class="ph ph-lock-key"></i>Change Password</div>
+              <div style="display:flex; flex-direction:column; gap:16px;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Current Password</label>
+                  <input type="password" id="ad-pwd-current" placeholder="Enter current password" style="width:100%;">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">New Password</label>
+                  <input type="password" id="ad-pwd-new" placeholder="Enter new password" style="width:100%;">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <label style="font-size:12px; font-weight:500; color:var(--sub);">Confirm New Password</label>
+                  <input type="password" id="ad-pwd-confirm" placeholder="Confirm new password" style="width:100%;">
+                </div>
+                <div class="error-text" id="ad-pwd-error" style="margin-top:0;"></div>
+                <button class="btn btn-primary" id="ad-pwd-submitBtn" style="align-self: flex-start;"><i class="ph ph-check"></i>Change Password</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
 
   <div id="ad-openingOverlay" class="overlay" style="display:none;">
-    <div class="modal">
+    <div class="modal large">
       <div class="modal-header">
         <div class="modal-ttl"><i class="ph ph-flag"></i>Opening stock</div>
       </div>
-      <div class="modal-body">
-        <div class="panel" style="margin-bottom:20px;">
-          <div class="panel-header"><span><i class="ph ph-upload-simple"></i>Bulk upload (CSV)</span></div>
-          <div style="padding:16px 20px;">
-            <p style="font-size:13px; color:var(--sub); margin-bottom:14px;">
-              Download the template, fill one row per branch + item + batch, then upload.
-              Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
-              Dates as <span class="mono">YYYY-MM-DD</span>. Re-uploading the same branch+item+batch overwrites the earlier value.
-            </p>
-            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-              <button class="btn btn-ghost" id="ad-open-template"><i class="ph ph-download-simple"></i>Download CSV template</button>
-              <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:auto; margin-bottom:0;">
-              <button class="btn btn-primary" id="ad-open-upload"><i class="ph ph-upload-simple"></i>Upload CSV</button>
+      <div class="modal-body split">
+        <!-- Left Side: Manual Entry (Fixed Width) -->
+        <div style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--s-16); overflow-y: auto; padding-right: 4px;">
+          <div class="row-sep" style="margin-top: 0;"><i class="ph ph-pencil-simple"></i>Or set a single entry</div>
+          <div class="grid-12">
+            <div class="span-12"><label>Branch</label><select id="ad-open-branch"></select></div>
+            <div class="span-12"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220" list="ad-items-datalist"></div>
+            <div class="span-4"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A" list="ad-batches-datalist"></div>
+            <div class="span-4"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
+            <div class="span-4"><label>As of date</label><input type="date" id="ad-open-date"></div>
+            <div class="span-12" style="margin-top: 8px;">
+              <button class="btn btn-primary" id="ad-open-submit" style="width:100%;"><i class="ph ph-check"></i>Save entry</button>
             </div>
-            <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
           </div>
+          <div class="error-text" id="ad-open-error" style="margin-bottom: 0;"></div>
         </div>
-        <div class="panel" style="margin-bottom:0;">
-          <div class="panel-header"><span><i class="ph ph-pencil-simple"></i>Or set a single entry</span></div>
-          <div style="padding:16px 20px;">
-            <div class="grid-12">
-              <div class="span-12"><label>Branch</label><select id="ad-open-branch"></select></div>
-              <div class="span-12"><label>Item name (without VIRGO)</label><input type="text" id="ad-open-item" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-              <div class="span-4"><label>Batch</label><input type="text" id="ad-open-batch" placeholder="e.g. A"></div>
-              <div class="span-4"><label>Opening qty</label><input type="number" id="ad-open-qty" min="0" step="1"></div>
-              <div class="span-4"><label>As of date</label><input type="date" id="ad-open-date"></div>
-              <div class="span-12" style="margin-top: 8px;">
-                <button class="btn btn-primary" id="ad-open-submit" style="width:100%;"><i class="ph ph-check"></i>Save entry</button>
-              </div>
+
+        <!-- Right Side: Bulk Upload (Flexible Width) -->
+        <div style="flex: 1; min-width: 0; border-left: 1px solid var(--border); padding-left: var(--s-32); display: flex; flex-direction: column; gap: var(--s-16); overflow-y: auto;">
+          <div class="row-sep" style="margin-top: 0;"><i class="ph ph-upload-simple"></i>Bulk upload (CSV)</div>
+          <p style="font-size:13px; color:var(--sub); line-height: 1.6; margin-bottom: var(--s-8);">
+            Download the template, fill one row per branch + item + batch, then upload.
+            Item names <strong>without</strong> the VIRGO prefix (e.g. <span class="mono">ALFA3030-VL300-2440X1220</span>).
+            <br><br>
+            Dates as <span class="mono">DD-MM-YYYY</span> (or <span class="mono">YYYY-MM-DD</span>). Extra blank columns are fine. Re-uploading the same branch+item+batch overwrites the earlier value.
+          </p>
+          <div style="display:flex; flex-direction: column; gap:16px;">
+            <button class="btn btn-ghost" id="ad-open-template" style="justify-content: flex-start; width: max-content;"><i class="ph ph-download-simple"></i>Download CSV template</button>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label>Select CSV File</label>
+              <input type="file" id="ad-open-file" accept=".csv,text/csv" style="width:100%; max-width: 320px;">
             </div>
-            <div class="error-text" id="ad-open-error"></div>
+
+            <button class="btn btn-primary" id="ad-open-upload" style="width: max-content;"><i class="ph ph-upload-simple"></i>Upload CSV</button>
           </div>
+          <div id="ad-open-uploadResult" style="margin-top:12px; font-size:13px;"></div>
         </div>
       </div>
       <div class="modal-foot">
@@ -339,30 +742,35 @@
       <div class="modal-header">
         <div class="modal-ttl"><i class="ph ph-scissors"></i>Record conversion</div>
       </div>
-      <div class="modal-body">
-        <div style="max-width: 840px;">
+      <div class="modal-body split">
+        <!-- Left Side: Form (Fixed Width) -->
+        <div style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--s-16); overflow-y: auto; padding-right: 4px;">
           <div class="grid-12">
             <div class="span-12"><label>Branch</label><select id="ad-conv-branch"></select></div>
           </div>
-          <div class="row-sep"><i class="ph ph-arrow-down"></i>Consume</div>
+          <div class="row-sep" style="margin-top: 0;"><i class="ph ph-arrow-down"></i>Consume</div>
           <div class="grid-12">
-            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220"></div>
-            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A"></div>
+            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-fromItem" placeholder="e.g. ALFA3030-VL300-2440X1220" list="ad-items-datalist"></div>
+            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-fromBatch" placeholder="e.g. A" list="ad-batches-datalist"></div>
             <div class="span-3"><label>Quantity</label><input type="number" id="ad-conv-fromQty" min="0" step="1"></div>
           </div>
-          <div class="row-sep"><i class="ph ph-arrow-up"></i>Produce</div>
+          <div class="row-sep" style="margin-top: 0;"><i class="ph ph-arrow-up"></i>Produce</div>
           <div class="grid-12">
-            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220"></div>
-            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B"></div>
+            <div class="span-6"><label>Item name (without VIRGO)</label><input type="text" id="ad-conv-toItem" placeholder="e.g. ALFA3030-VL300-3050X1220" list="ad-items-datalist"></div>
+            <div class="span-3"><label>Batch</label><input type="text" id="ad-conv-toBatch" placeholder="e.g. B" list="ad-batches-datalist"></div>
             <div class="span-3"><label>Quantity</label><input type="number" id="ad-conv-toQty" min="0" step="1"></div>
           </div>
           <div class="grid-12">
             <div class="span-12"><label>Notes (optional)</label><input type="text" id="ad-conv-notes"></div>
           </div>
-          <div class="error-text" id="ad-conv-error"></div>
+          <div class="error-text" id="ad-conv-error" style="margin-bottom: 0;"></div>
         </div>
-        <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:16px;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
-        <div id="ad-conversionsTableWrap" class="table-scroll"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
+
+        <!-- Right Side: Recent Conversions (Flexible Width) -->
+        <div style="flex: 1; min-width: 0; border-left: 1px solid var(--border); padding-left: var(--s-32); display: flex; flex-direction: column; overflow-y: hidden;">
+          <div class="panel-header" style="padding-left:0; padding-right:0; margin-top:0; border-bottom: none;"><span><i class="ph ph-clock-counter-clockwise"></i>Recent conversions</span></div>
+          <div id="ad-conversionsTableWrap" class="table-scroll" style="flex: 1; overflow-y: auto; max-height: none;"><div class="skeleton" style="height:80px; margin:16px 0; border-radius:12px;"></div></div>
+        </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" id="ad-conv-close">Close</button>
@@ -421,7 +829,6 @@
 <!-- ======================= HOD VIEW ======================= -->
 <div id="view-hod" class="app-view shell" style="display:none;">
   <aside class="sb">
-    <div>
       <div class="sb-brand">
         <div class="sb-logo"><svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.5"/><rect x="6.5" y="9.6" width="15" height="5.2" rx="1.4" fill="#fff" opacity="0.75"/><rect x="4.2" y="15.2" width="15" height="5.2" rx="1.4" fill="#fff"/></svg></div>
         <div>
@@ -435,8 +842,10 @@
           <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Transfers</span></div>
         </nav>
+        <nav class="sb-nav" style="margin-top: auto; padding-top: 0;" role="navigation" aria-label="Settings menu">
+          <div class="ni" data-page="settings" data-tooltip="Settings"><i class="ph ph-gear"></i><span class="ni-txt">Settings</span></div>
+        </nav>
       </div>
-    </div>
     <div class="sb-bottom-wrapper">
       <div class="sb-user">
         <div class="av" id="hod-avatar">–</div>
@@ -444,7 +853,9 @@
           <div class="sb-uname" id="hod-userName">—</div>
           <span class="rtag rt-HOD">HOD</span>
         </div>
-        <button class="logout-btn" title="Sign out"><i class="ph ph-sign-out"></i></button>
+        <div style="margin-left: auto; display: flex; gap: 4px; align-items: center;">
+          <button class="logout-btn" title="Sign out" style="margin-left: 0;"><i class="ph ph-sign-out"></i></button>
+        </div>
       </div>
     </div>
   </aside>
@@ -462,11 +873,13 @@
     </div>
 
     <div class="content" role="main">
+
       <div class="panel" id="hod-ledgerPanel" data-page="ledger">
         <div class="panel-header">
           <span><i class="ph ph-stack"></i>Stock ledger — assigned branches</span>
           <div class="panel-header-tools">
             <input type="text" id="hod-ledgerSearch" placeholder="Search item name, batch, or branch…">
+            <button class="btn btn-ghost btn-small" id="hod-exportLedgerBtn"><i class="ph ph-download-simple"></i>Export CSV</button>
           </div>
         </div>
         <div id="hod-ledgerTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
@@ -476,10 +889,109 @@
         <div class="panel-header"><span><i class="ph ph-truck"></i>Branch transfers</span></div>
         <div id="hod-transferTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
+
+      <div class="panel" id="hod-settingsPanel" data-page="settings" style="display:none;">
+        <div class="panel-header">
+          <span><i class="ph ph-gear"></i>Settings</span>
+        </div>
+        <div style="padding: var(--s-24); max-width: 480px; display: flex; flex-direction: column; gap: var(--s-24);">
+          <div>
+            <div class="row-sep" style="margin-top: 0; margin-bottom: var(--s-16);"><i class="ph ph-lock-key"></i>Change Password</div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Current Password</label>
+                <input type="password" id="hod-pwd-current" placeholder="Enter current password" style="width:100%;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">New Password</label>
+                <input type="password" id="hod-pwd-new" placeholder="Enter new password" style="width:100%;">
+              </div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:12px; font-weight:500; color:var(--sub);">Confirm New Password</label>
+                <input type="password" id="hod-pwd-confirm" placeholder="Confirm new password" style="width:100%;">
+              </div>
+              <div class="error-text" id="hod-pwd-error" style="margin-top:0;"></div>
+              <button class="btn btn-primary" id="hod-pwd-submitBtn" style="align-self: flex-start;"><i class="ph ph-check"></i>Change Password</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<script src="/app.js"></script>
+
+  <div id="shared-reconcileOverlay" class="overlay" style="display:none;">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-ttl"><i class="ph ph-shield-check"></i>Physical Stock Reconciliation</div>
+      </div>
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:13px; color:var(--sub); line-height:1.5; margin:0;">
+          Select branch, item, and batch to perform a physical stock audit check. System will fetch ledger records and calculate discrepancy variance automatically.
+        </p>
+        
+        <div style="display:flex; flex-direction:column; gap:6px;" id="rec-branch-container">
+          <label style="font-size:12px; font-weight:500; color:var(--sub);">Branch</label>
+          <select id="rec-branch" style="width:100%;"></select>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:12px; font-weight:500; color:var(--sub);">Item Name</label>
+          <select id="rec-item" style="width:100%;"></select>
+        </div>
+        
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:12px; font-weight:500; color:var(--sub);">Batch Code</label>
+          <select id="rec-batch" style="width:100%;"></select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="font-size:12px; font-weight:500; color:var(--sub);">Ledger Closing Qty</label>
+            <input type="text" id="rec-ledgerQty" readonly style="width:100%; background:rgba(255,255,255,0.03); cursor:not-allowed;" placeholder="0">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="font-size:12px; font-weight:500; color:var(--sub);">Physical Counted Qty</label>
+            <input type="number" id="rec-physicalQty" placeholder="Enter physical stock" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid var(--border);">
+          <span style="font-size:13px; font-weight:600; color:var(--sub);">Discrepancy Variance:</span>
+          <span id="rec-variance" style="font-family:var(--font-ui); font-weight:700; font-size:16px;">—</span>
+        </div>
+
+        <div class="error-text" id="rec-error" style="margin-top:0;"></div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-ghost btn-small" id="rec-cancelBtn">Cancel</button>
+        <button class="btn btn-primary btn-small" id="rec-submitBtn"><i class="ph ph-check"></i>Submit Reconcile</button>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="br-items-datalist"></datalist>
+  <datalist id="br-batches-datalist"></datalist>
+  <datalist id="ad-items-datalist"></datalist>
+  <datalist id="ad-batches-datalist"></datalist>
+
+  <div id="app-confirmOverlay" class="overlay" style="display:none;">
+    <div class="modal small" style="max-width: 420px; padding: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; background: var(--card); border: 1px solid var(--border);">
+      <div class="modal-header" style="background: rgba(229, 62, 62, 0.04); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+        <i class="ph ph-warning-circle" style="color: var(--red); font-size: 20px;"></i>
+        <div class="modal-ttl" style="color: var(--red); font-weight: 700; font-size: 15px; font-family: var(--font-display);">Confirm Action</div>
+      </div>
+      <div class="modal-body" style="padding: 24px; font-size: 13.5px; color: var(--text); line-height: 1.6;" id="app-confirm-message">
+        Are you sure you want to perform this action?
+      </div>
+      <div class="modal-ft" style="padding: 16px 24px; display: flex; justify-content: flex-end; gap: var(--s-12); border-top: 1px solid var(--border); background: rgba(0,0,0,0.01);">
+        <button class="btn btn-ghost btn-small" id="app-confirm-cancel">Cancel</button>
+        <button class="btn btn-small" id="app-confirm-ok" style="background-color: var(--red); color: white; border: none;"><i class="ph ph-check" style="margin-right:4px;"></i>Clear Data</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js?v=8.7"></script>
 </body>
 </html>
