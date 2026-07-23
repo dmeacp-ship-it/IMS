@@ -698,7 +698,16 @@ function wireSidebarNav() {
       }
     }
 
+    var prefetched = {};
     items.forEach(function (item) {
+      item.addEventListener('mouseenter', function () {
+        var page = item.getAttribute('data-page');
+        if (prefetched[page]) return;
+        prefetched[page] = true;
+        if (page === 'ledger' && typeof AdminView !== 'undefined' && AdminView.loadLedger) { AdminView.loadLedger(); }
+        else if (page === 'planning' && typeof AdminView !== 'undefined' && AdminView.loadPlanning) { AdminView.loadPlanning(); }
+        else if (page === 'variance' && typeof VarianceReport !== 'undefined' && VarianceReport.load) { VarianceReport.load('ad'); }
+      });
       item.addEventListener('click', function () {
         items.forEach(function (n) { n.classList.remove('active'); });
         item.classList.add('active');

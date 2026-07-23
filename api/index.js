@@ -29,9 +29,12 @@ app.use(function (req, res, next) {
 
 /* Wrap an async (req) => result handler into an Express handler with uniform
    error → JSON mapping. */
-function handle(fn) {
+function handle(fn, cacheHeader) {
   return async function (req, res) {
     try {
+      if (cacheHeader) {
+        res.setHeader('Cache-Control', cacheHeader);
+      }
       const out = await fn(req);
       res.json(out);
     } catch (e) {
@@ -122,7 +125,7 @@ app.get('/api/admin/users',
 
 app.get('/api/admin/branches',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function () { return data.getAllBranches(); }));
+  handle(function () { return data.getAllBranches(); }, 's-maxage=60, stale-while-revalidate=300'));
 
 app.post('/api/admin/users',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
@@ -151,7 +154,7 @@ app.post('/api/admin/hod-assignments',
 
 app.get('/api/admin/ledger',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function () { return data.getAllItemLedger(); }));
+  handle(function () { return data.getAllItemLedger(); }, 's-maxage=10, stale-while-revalidate=60'));
 
 app.post('/api/admin/ledger/refresh',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
@@ -161,7 +164,7 @@ app.post('/api/admin/ledger/refresh',
 
 app.get('/api/order-planning',
   auth.requireRole(),
-  handle(function (req) { return data.getOrderPlanning(req.session); }));
+  handle(function (req) { return data.getOrderPlanning(req.session); }, 's-maxage=10, stale-while-revalidate=60'));
 
 app.post('/api/admin/order-planning/refresh',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
