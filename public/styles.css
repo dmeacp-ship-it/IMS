@@ -48,8 +48,25 @@
     color-scheme: light;
   }
 
-  html, body { height: 100%; font-family: var(--font-body); font-size: 13px; -webkit-font-smoothing: antialiased; }
+  html, body { height: 100%; font-family: var(--font-body); font-size: 13px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
   body { background: var(--bg); color: var(--text); transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out); }
+
+  /* ── GPU Hardware Acceleration & Layer Compositing ── */
+  .panel, .table-scroll, .content, .stat-card, .btn, .modal, .toast, .sb, .custom-select-dropdown {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .panel[style*="display: none"] {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 600px;
+  }
+
+  .table-scroll {
+    contain: layout style paint;
+    will-change: scroll-position;
+    -webkit-overflow-scrolling: touch;
+  }
 
   h1, h2, h3, h4, h5, h6, .btn, .sb-name, .ni, .tbl-ttl, th, .stat-n, .stat-l, .modal-ttl, label, .badge, .plant-pill, .fsec-ttl, .sb-sub, .rtag, .status-sel, .filter-sel, input, textarea, select {
     font-family: var(--font-ui);
