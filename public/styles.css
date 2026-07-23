@@ -757,7 +757,7 @@
      and distributes aluminum composite panels. The palette lives in
      the oxide/alloy family (weathered coil-coating, brushed
      aluminum) instead of a generic SaaS indigo-on-slate look. Type
-     is a 3-role system: Space Grotesque (brand/heading, used only at
+     is a 3-role system: Space Grotesk (brand/heading, used only at
      true brand moments), IBM Plex Sans (UI workhorse), IBM Plex Mono
      (data — quantities, codes, batches). Shape is a moderate,
      engineered radius rather than pill-everything. The brand mark is
@@ -767,7 +767,7 @@
 
   :root {
     --s-4: 4px; --s-8: 8px; --s-12: 12px; --s-16: 16px; --s-24: 24px; --s-32: 32px; --s-40: 40px;
-    --font-display: 'Space Grotesque', var(--font-ui);
+    --font-display: 'Space Grotesk', var(--font-ui);
     --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;

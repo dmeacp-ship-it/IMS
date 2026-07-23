@@ -19,7 +19,9 @@ app.use(function (req, res, next) {
   res.setHeader('Referrer-Policy', 'same-origin');
   
   const supabaseUrl = process.env.SUPABASE_URL || '';
-  res.setHeader('Content-Security-Policy', `default-src 'self' https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ${supabaseUrl};`);
+  // Fonts + icons are now self-hosted, so no third-party origins are needed —
+  // everything but the Supabase API endpoint is locked to same-origin.
+  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${supabaseUrl};`);
   next();
 });
 
