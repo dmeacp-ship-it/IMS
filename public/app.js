@@ -781,36 +781,90 @@ function displayItemName(s) {
   return String(s || '').replace(/^\s*VIRGO\s+/i, '');
 }
 
+/* Progressive table paint. Writes the header + first chunk of rows to the DOM
+   synchronously (instant first paint), then streams the remaining rows in
+   requestAnimationFrame batches so a multi-thousand-row table never blocks the
+   main thread while it parses/lays out. A newer paint on the same wrapper
+   cancels any in-flight one, so fast filter typing can't leak stale rows.
+   `rowStrings` is an array of <tr>… strings; `tableOpen` is the opening
+   <table …> tag and `headHTML` the full <thead> inner markup. */
+var _paintJobs = new WeakMap();
+function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
+  var prev = _paintJobs.get(wrap);
+  if (prev) { cancelAnimationFrame(prev); _paintJobs.delete(wrap); }
+
+  if (!rowStrings.length) {
+    wrap.innerHTML = emptyHTML ||
+      emptyState('ph-magnifying-glass', 'No matching rows', 'Try a different search or filter.');
+    return;
+  }
+
+  wrap.innerHTML = tableOpen + '<thead>' + headHTML + '</thead><tbody></tbody></table>';
+  var tbody = wrap.querySelector('tbody');
+  if (!tbody) return;
+
+  var FIRST = 120;  // fills a viewport instantly
+  var CHUNK = 200;  // per-frame batch thereafter
+  tbody.insertAdjacentHTML('beforeend', rowStrings.slice(0, FIRST).join(''));
+  var i = FIRST;
+  if (i >= rowStrings.length) return;
+
+  function step() {
+    // A newer paint replaces the tbody (disconnecting this one) — bail out.
+    if (!tbody.isConnected) { _paintJobs.delete(wrap); return; }
+    var end = Math.min(i + CHUNK, rowStrings.length);
+    tbody.insertAdjacentHTML('beforeend', rowStrings.slice(i, end).join(''));
+    i = end;
+    if (i < rowStrings.length) _paintJobs.set(wrap, requestAnimationFrame(step));
+    else _paintJobs.delete(wrap);
+  }
+  _paintJobs.set(wrap, requestAnimationFrame(step));
+}
+
 // Shared by Branch/Admin/HOD stock-ledger panels.
+function ledgerHeadHTML(showBranch) {
+  return '<tr>' + (showBranch ? '<th scope="col">Branch</th>' : '')
+    + '<th scope="col">Item Name</th><th scope="col">Batch</th><th scope="col">Opening</th><th scope="col">Inward</th><th scope="col">Sales Returns</th><th scope="col">Outward</th><th scope="col">Adjustment</th><th scope="col">Incoming Transit</th><th scope="col">Closing</th></tr>';
+}
+function ledgerRowHTML(r, showBranch) {
+  var closing = Math.round(r.closing_qty);
+  var inTransit = Math.round(r.in_transit_qty || 0);
+  var salesReturns = Math.round(r.sales_return_qty || 0);
+  var adjustment = Math.round(r.adjustment_qty || 0);
+  var adjText = adjustment === 0 ? '0' : ((adjustment > 0 ? '+' : '') + adjustment);
+  var adjCls = adjustment > 0 ? ' td-positive' : (adjustment < 0 ? ' td-negative' : '');
+  return '<tr>'
+    + (showBranch ? '<td class="mono">' + esc(r.branch_code) + '</td>' : '')
+    + '<td class="mono">' + esc(displayItemName(r.item_name)) + '</td>'
+    + '<td class="mono">' + esc(r.batch || '—') + '</td>'
+    + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
+    + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
+    + '<td class="mono' + (salesReturns > 0 ? ' td-positive' : '') + '">' + salesReturns + '</td>'
+    + '<td class="mono">' + Math.round(r.outward_qty) + '</td>'
+    + '<td class="mono' + adjCls + '">' + adjText + '</td>'
+    + '<td class="mono' + (inTransit > 0 ? ' td-positive' : '') + '">' + (inTransit > 0 ? ('<strong>' + inTransit + '</strong>') : inTransit) + '</td>'
+    + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : '')) + '"><strong>' + closing + '</strong></td>'
+    + '</tr>';
+}
+// Progressive paint into a wrapper element (preferred for the live tables).
+function paintLedger(wrap, rows, opts) {
+  opts = opts || {};
+  if (!wrap) return;
+  var showBranch = !!opts.showBranch;
+  var rowStrings = rows.map(function (r) { return ledgerRowHTML(r, showBranch); });
+  paintTable(wrap, '<table role="table" aria-label="Stock ledger">',
+    ledgerHeadHTML(showBranch), rowStrings, opts.emptyHTML);
+}
+// Kept: returns a full HTML string (used where a string, not a live paint, is
+// needed). Live table panels use paintLedger for non-blocking rendering.
 function renderLedgerRows(rows, opts) {
   opts = opts || {};
   var showBranch = !!opts.showBranch;
   if (rows.length === 0) {
     return emptyState('ph-magnifying-glass', 'No matching rows', 'Try a different search or filter, or add opening stock first.');
   }
-  var head = (showBranch ? '<th scope="col">Branch</th>' : '')
-    + '<th scope="col">Item Name</th><th scope="col">Batch</th><th scope="col">Opening</th><th scope="col">Inward</th><th scope="col">Sales Returns</th><th scope="col">Outward</th><th scope="col">Adjustment</th><th scope="col">Incoming Transit</th><th scope="col">Closing</th>';
-  var body = rows.map(function (r) {
-    var closing = Math.round(r.closing_qty);
-    var inTransit = Math.round(r.in_transit_qty || 0);
-    var salesReturns = Math.round(r.sales_return_qty || 0);
-    var adjustment = Math.round(r.adjustment_qty || 0);
-    var adjText = adjustment === 0 ? '0' : ((adjustment > 0 ? '+' : '') + adjustment);
-    var adjCls = adjustment > 0 ? ' td-positive' : (adjustment < 0 ? ' td-negative' : '');
-    return '<tr>'
-      + (showBranch ? '<td class="mono">' + esc(r.branch_code) + '</td>' : '')
-      + '<td class="mono">' + esc(displayItemName(r.item_name)) + '</td>'
-      + '<td class="mono">' + esc(r.batch || '—') + '</td>'
-      + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
-      + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
-      + '<td class="mono' + (salesReturns > 0 ? ' td-positive' : '') + '">' + salesReturns + '</td>'
-      + '<td class="mono">' + Math.round(r.outward_qty) + '</td>'
-      + '<td class="mono' + adjCls + '">' + adjText + '</td>'
-      + '<td class="mono' + (inTransit > 0 ? ' td-positive' : '') + '">' + (inTransit > 0 ? ('<strong>' + inTransit + '</strong>') : inTransit) + '</td>'
-      + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : '')) + '"><strong>' + closing + '</strong></td>'
-      + '</tr>';
-  }).join('');
-  return '<table role="table" aria-label="Stock ledger"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+  var body = rows.map(function (r) { return ledgerRowHTML(r, showBranch); }).join('');
+  return '<table role="table" aria-label="Stock ledger"><thead>' + ledgerHeadHTML(showBranch) + '</thead><tbody>' + body + '</tbody></table>';
 }
 
 function filterLedgerRows(rows, term, opts) {
@@ -884,12 +938,8 @@ function opInput(r, field, type, value) {
 }
 
 // The ACP worksheet: grouped headers, sticky Item column, 5 editable columns.
-function renderPlanningRows(rows, showBranch) {
-  if (rows.length === 0) {
-    return emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.');
-  }
-  var head =
-    '<tr>'
+function planningHeadHTML(showBranch) {
+  return '<tr>'
     + '<th rowspan="2" class="op-sticky">Item</th>'
     + (showBranch ? '<th rowspan="2">Branch</th>' : '')
     + '<th colspan="5" class="op-gh">Sales history</th>'
@@ -900,7 +950,9 @@ function renderPlanningRows(rows, showBranch) {
     + '<th>Avg Req.</th><th>Closing</th><th>In-Transit</th><th>N Rating</th><th>Br. Grade</th><th>Order %</th><th>Gross Req</th><th>Actual Req.</th>'
     + '<th>Actual Order</th><th>Branch Remarks</th><th>Appvd Order</th><th>Factory Remark</th><th>Batch</th>'
     + '</tr>';
-  var body = rows.map(function (r) {
+}
+function planningRowHTML(r, showBranch) {
+  {
     var stock = Math.round(opNum(r.current_stock));
     var transit = Math.round(opNum(r.in_transit));
     var avg = Math.round(op4mAvg(r));
@@ -932,8 +984,23 @@ function renderPlanningRows(rows, showBranch) {
       + '<td class="op-cell">' + opInput(r, 'factory_remark', 'text', r.factory_remark) + '</td>'
       + '<td class="op-cell">' + opInput(r, 'batch', 'text', r.plan_batch) + '</td>'
       + '</tr>';
-  }).join('');
-  return '<table role="table" aria-label="Order planning" class="op-sheet"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  }
+}
+// Progressive paint of the ACP worksheet into a wrapper element.
+function paintPlanning(wrap, rows, showBranch) {
+  if (!wrap) return;
+  var rowStrings = rows.map(function (r) { return planningRowHTML(r, showBranch); });
+  paintTable(wrap, '<table role="table" aria-label="Order planning" class="op-sheet">',
+    planningHeadHTML(showBranch), rowStrings,
+    emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.'));
+}
+// Kept for string callers; live panel uses paintPlanning.
+function renderPlanningRows(rows, showBranch) {
+  if (rows.length === 0) {
+    return emptyState('ph-chart-line-up', 'No planning data', 'No customer-sales data yet, or try a different filter. Run a Refresh after syncing sales.');
+  }
+  var body = rows.map(function (r) { return planningRowHTML(r, showBranch); }).join('');
+  return '<table role="table" aria-label="Order planning" class="op-sheet"><thead>' + planningHeadHTML(showBranch) + '</thead><tbody>' + body + '</tbody></table>';
 }
 
 function filterPlanningRows(rows, term, grade) {
@@ -996,7 +1063,7 @@ var BranchView = {
   init: function () {
     document.getElementById('br-ledgerSearch').addEventListener('input', debounce(function (e) {
       var filtered = filterLedgerRows(BranchView.ledgerRows, e.target.value, { showBranch: false });
-      document.getElementById('br-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: false });
+      paintLedger(document.getElementById('br-ledgerTableWrap'), filtered, { showBranch: false });
     }));
 
     BranchView.initAudit();
@@ -1070,9 +1137,10 @@ var BranchView = {
         document.getElementById('br-ledgerCount').textContent = rows.length;
         updateDatalist('br-items-datalist', rows, 'item_name');
         updateDatalist('br-batches-datalist', rows, 'batch');
-        document.getElementById('br-ledgerTableWrap').innerHTML = rows.length === 0
-          ? emptyState('ph-stack', 'No stock data yet', 'Opening stock and synced dispatches will appear here.')
-          : renderLedgerRows(rows, { showBranch: false });
+        paintLedger(document.getElementById('br-ledgerTableWrap'), rows, {
+          showBranch: false,
+          emptyHTML: emptyState('ph-stack', 'No stock data yet', 'Opening stock and synced dispatches will appear here.')
+        });
 
         BranchView.populateAuditItems();
       })
@@ -1170,7 +1238,7 @@ var HodView = {
   init: function () {
     document.getElementById('hod-ledgerSearch').addEventListener('input', debounce(function (e) {
       var filtered = filterLedgerRows(HodView.ledgerRows, e.target.value, { showBranch: true });
-      document.getElementById('hod-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: true });
+      paintLedger(document.getElementById('hod-ledgerTableWrap'), filtered, { showBranch: true });
     }));
 
     document.getElementById('hod-exportLedgerBtn').addEventListener('click', function () {
@@ -1199,9 +1267,10 @@ var HodView = {
     apiGet('/api/hod/ledger')
       .then(function (rows) {
         HodView.ledgerRows = rows;
-        document.getElementById('hod-ledgerTableWrap').innerHTML = rows.length === 0
-          ? emptyState('ph-buildings', 'No branches assigned yet', 'Ask your Super Admin to assign branches to your account.')
-          : renderLedgerRows(rows, { showBranch: true });
+        paintLedger(document.getElementById('hod-ledgerTableWrap'), rows, {
+          showBranch: true,
+          emptyHTML: emptyState('ph-buildings', 'No branches assigned yet', 'Ask your Super Admin to assign branches to your account.')
+        });
 
       })
       .catch(function (err) {
@@ -1840,7 +1909,7 @@ var AdminView = {
     var rows = AdminView.ledgerRows;
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
     rows = filterLedgerRows(rows, term, { showBranch: true });
-    document.getElementById('ad-ledgerTableWrap').innerHTML = renderLedgerRows(rows, { showBranch: true });
+    paintLedger(document.getElementById('ad-ledgerTableWrap'), rows, { showBranch: true });
   },
 
   loadPlanning: function () {
@@ -1865,7 +1934,7 @@ var AdminView = {
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
     rows = filterPlanningRows(rows, term, grade);
     if (needsOrder) rows = rows.filter(function (r) { return opRecommend(r).actualReq > 0; });
-    document.getElementById('ad-planTableWrap').innerHTML = renderPlanningRows(rows, !branchFilter);
+    paintPlanning(document.getElementById('ad-planTableWrap'), rows, !branchFilter);
   },
 
   loadConversions: function () {
