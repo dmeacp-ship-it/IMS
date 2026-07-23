@@ -46,6 +46,18 @@ async function api(path, opts) {
 function apiGet(path) { return api(path, { method: 'GET' }); }
 function apiPost(path, data) { return api(path, { method: 'POST', body: JSON.stringify(data || {}) }); }
 
+/* Coalesce rapid-fire events (e.g. keystrokes in a search box) into a single
+   trailing call, so we re-render a large table once the user pauses instead of
+   on every character. Keeps typing snappy on the big cross-branch ledgers. */
+function debounce(fn, wait) {
+  var t;
+  return function () {
+    var ctx = this, args = arguments;
+    clearTimeout(t);
+    t = setTimeout(function () { fn.apply(ctx, args); }, wait == null ? 120 : wait);
+  };
+}
+
 /* ------------------------------ UI helpers ------------------------------ */
 // Dynamic-island toast; replaces browser alert() everywhere.
 function toast(type, msg) {
@@ -267,7 +279,7 @@ var VarianceReport = {
 
   init: function (p) {
     var search = document.getElementById(p + '-vr-search');
-    if (search) search.addEventListener('input', function () { VarianceReport.applyFilters(p); });
+    if (search) search.addEventListener('input', debounce(function () { VarianceReport.applyFilters(p); }));
     var disc = document.getElementById(p + '-vr-discOnly');
     if (disc) disc.addEventListener('change', function () { VarianceReport.applyFilters(p); });
     var bf = document.getElementById(p + '-vr-branchFilter');
@@ -982,10 +994,10 @@ var BranchView = {
   ledgerRows: [],
 
   init: function () {
-    document.getElementById('br-ledgerSearch').addEventListener('input', function (e) {
+    document.getElementById('br-ledgerSearch').addEventListener('input', debounce(function (e) {
       var filtered = filterLedgerRows(BranchView.ledgerRows, e.target.value, { showBranch: false });
       document.getElementById('br-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: false });
-    });
+    }));
 
     BranchView.initAudit();
 
@@ -1156,10 +1168,10 @@ var HodView = {
   ledgerRows: [],
 
   init: function () {
-    document.getElementById('hod-ledgerSearch').addEventListener('input', function (e) {
+    document.getElementById('hod-ledgerSearch').addEventListener('input', debounce(function (e) {
       var filtered = filterLedgerRows(HodView.ledgerRows, e.target.value, { showBranch: true });
       document.getElementById('hod-ledgerTableWrap').innerHTML = renderLedgerRows(filtered, { showBranch: true });
-    });
+    }));
 
     document.getElementById('hod-exportLedgerBtn').addEventListener('click', function () {
       var term = document.getElementById('hod-ledgerSearch').value;
@@ -1228,10 +1240,10 @@ var AdminView = {
   init: function () {
     document.getElementById('ad-open-date').value = new Date().toISOString().slice(0, 10);
 
-    document.getElementById('ad-ledgerSearch').addEventListener('input', AdminView.filterLedger);
+    document.getElementById('ad-ledgerSearch').addEventListener('input', debounce(AdminView.filterLedger));
     document.getElementById('ad-ledgerBranchFilter').addEventListener('change', AdminView.filterLedger);
 
-    document.getElementById('ad-planSearch').addEventListener('input', AdminView.filterPlanning);
+    document.getElementById('ad-planSearch').addEventListener('input', debounce(AdminView.filterPlanning));
     document.getElementById('ad-planBranchFilter').addEventListener('change', AdminView.filterPlanning);
     document.getElementById('ad-planGradeFilter').addEventListener('change', AdminView.filterPlanning);
     document.getElementById('ad-planNeedsOrder').addEventListener('change', AdminView.filterPlanning);

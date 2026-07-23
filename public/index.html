@@ -4,11 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Virgo ACP — Branch Transfer Tracker</title>
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <!-- Our own stylesheet stays render-blocking (it owns the first paint); the
+       third-party icon + font sheets load async so a slow unpkg/Google round-trip
+       can't hold up first paint. media=print → onload swaps to all is the
+       standard non-blocking-CSS trick; <noscript> keeps it working JS-off. -->
   <link rel="stylesheet" href="/styles.css?v=7.9">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesque:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  </noscript>
 </head>
 <body>
 
@@ -998,6 +1007,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=9.6"></script>
+  <script src="/app.js?v=9.7" defer></script>
 </body>
 </html>
