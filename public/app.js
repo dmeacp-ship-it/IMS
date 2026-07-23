@@ -805,6 +805,8 @@ function displayItemName(s) {
    `rowStrings` is an array of <tr>… strings; `tableOpen` is the opening
    <table …> tag and `headHTML` the full <thead> inner markup. */
 var _paintJobs = new WeakMap();
+var _virtualTables = new WeakMap();
+
 function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
   var prev = _paintJobs.get(wrap);
   if (prev) { cancelAnimationFrame(prev); _paintJobs.delete(wrap); }
@@ -815,6 +817,52 @@ function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
     return;
   }
 
+  // Virtual Windowing for large datasets (> 250 rows) to keep DOM element count under 40 constant
+  if (rowStrings.length > 250) {
+    var ROW_HEIGHT = 40;
+    var VISIBLE_PADDING = 15;
+    
+    function renderVirtualWindow() {
+      if (!wrap.isConnected) return;
+      var scrollTop = wrap.scrollTop || 0;
+      var clientHeight = wrap.clientHeight || 600;
+      
+      var startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - VISIBLE_PADDING);
+      var endIndex = Math.min(rowStrings.length, Math.ceil((scrollTop + clientHeight) / ROW_HEIGHT) + VISIBLE_PADDING);
+      
+      var topHeight = startIndex * ROW_HEIGHT;
+      var bottomHeight = Math.max(0, (rowStrings.length - endIndex) * ROW_HEIGHT);
+      
+      var topSpacer = topHeight > 0 ? '<tr class="virtual-spacer" style="height:' + topHeight + 'px;"><td colspan="20"></td></tr>' : '';
+      var bottomSpacer = bottomHeight > 0 ? '<tr class="virtual-spacer" style="height:' + bottomHeight + 'px;"><td colspan="20"></td></tr>' : '';
+      
+      var visibleHTML = topSpacer + rowStrings.slice(startIndex, endIndex).join('') + bottomSpacer;
+      var tbody = wrap.querySelector('tbody');
+      if (tbody) {
+        tbody.innerHTML = visibleHTML;
+      }
+    }
+
+    wrap.innerHTML = tableOpen + '<thead>' + headHTML + '</thead><tbody></tbody></table>';
+    renderVirtualWindow();
+
+    if (!_virtualTables.has(wrap)) {
+      var ticking = false;
+      wrap.addEventListener('scroll', function () {
+        if (!ticking) {
+          requestAnimationFrame(function () {
+            renderVirtualWindow();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+      _virtualTables.set(wrap, renderVirtualWindow);
+    }
+    return;
+  }
+
+  // Standard progressive paint for datasets <= 250 rows
   wrap.innerHTML = tableOpen + '<thead>' + headHTML + '</thead><tbody></tbody></table>';
   var tbody = wrap.querySelector('tbody');
   if (!tbody) return;
