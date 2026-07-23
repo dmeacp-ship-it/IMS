@@ -354,7 +354,7 @@ var VarianceReport = {
     if (!wrap) return;
     var rows = VarianceReport.currentFiltered(p);
     VarianceReport.filtered[p] = rows;
-    wrap.innerHTML = VarianceReport.renderTable(rows, p);
+    VarianceReport.renderTable(rows, p, wrap);
     var applyAll = document.getElementById(p + '-vr-applyAll');
     if (applyAll) {
       var discCount = rows.filter(function (r) { return Math.round(r.variance) !== 0; }).length;
@@ -379,16 +379,18 @@ var VarianceReport = {
       + tile('Net value impact', netVal, netColor);
   },
 
-  renderTable: function (rows, p) {
+  renderTable: function (rows, p, wrap) {
+    if (!wrap) return;
     if (!rows.length) {
-      return emptyState('ph-scales', 'No variances to show', 'Nothing counted yet, or every counted item matches the ledger (try turning off “Discrepancies only”).');
+      wrap.innerHTML = emptyState('ph-scales', 'No variances to show', 'Nothing counted yet, or every counted item matches the ledger (try turning off “Discrepancies only”).');
+      return;
     }
     var canAdjust = VarianceReport.canAdjust(p);
     var head = '<th scope="col">Branch</th><th scope="col">Item Name</th><th scope="col">Batch</th>'
       + '<th scope="col">Ledger</th><th scope="col">Physical</th><th scope="col">Variance</th>'
       + '<th scope="col">Var %</th><th scope="col">Value</th><th scope="col">Counted</th>'
       + (canAdjust ? '<th scope="col"></th>' : '');
-    var body = rows.map(function (r, i) {
+    var rowStrings = rows.map(function (r, i) {
       var v = Math.round(r.variance);
       var vColor = v === 0 ? 'var(--green)' : (v < 0 ? 'var(--danger)' : 'var(--accent)');
       var vText = (v > 0 ? '+' : '') + v;
@@ -414,8 +416,9 @@ var VarianceReport = {
         + '<td>' + when + '</td>'
         + action
         + '</tr>';
-    }).join('');
-    return '<table role="table" aria-label="Item-wise variance report"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>';
+    });
+    var emptyHTML = emptyState('ph-scales', 'No variances to show', 'Nothing counted yet, or every counted item matches the ledger (try turning off “Discrepancies only”).');
+    paintTable(wrap, '<table role="table" aria-label="Item-wise variance report">', '<tr>' + head + '</tr>', rowStrings, emptyHTML);
   },
 
   applyOne: function (p, row, btn) {

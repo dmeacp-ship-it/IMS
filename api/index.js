@@ -5,11 +5,13 @@ require('dotenv/config');
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 
 const auth = require('../lib/auth');
 const data = require('../lib/data');
 
 const app = express();
+app.use(compression());
 app.use(express.json({ limit: '5mb' })); // bulk opening-stock uploads can be large
 app.use(cookieParser());
 
