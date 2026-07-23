@@ -1133,3 +1133,47 @@ html.theme-transition::view-transition-new(root) {
 .op-g-none { background: transparent; color: var(--sub); font-weight: 400; }
 .op-score { font-size: 12px; color: var(--sub); font-weight: 600; }
 
+/* Order Planning worksheet */
+.op-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sub);
+  background: rgba(127,127,127,0.12);
+}
+#ad-planTableWrap .op-sheet { border-collapse: separate; border-spacing: 0; }
+#ad-planTableWrap thead th { white-space: nowrap; }
+#ad-planTableWrap th.op-sticky,
+#ad-planTableWrap td.op-sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--surface);
+  min-width: 200px;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+.op-gh {
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sub);
+  background: rgba(127,127,127,0.07);
+}
+.op-cell { padding: 4px 6px; }
+.op-edit {
+  width: 90px;
+  padding: 5px 8px;
+  font-size: 12.5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+.op-edit[type="text"] { width: 140px; }
+.op-edit:focus { outline: none; border-color: var(--accent, #c96f2d); }
+.op-edit.op-saving { opacity: 0.5; }
+.op-edit.op-saved { border-color: #16a34a; }
+
