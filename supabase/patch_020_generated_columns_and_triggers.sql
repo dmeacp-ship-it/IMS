@@ -19,10 +19,10 @@ create index if not exists idx_sales_txn_source_norm
 create index if not exists idx_sales_txn_dest_norm
   on sales_transactions (destination_branch_code, normalized_item_name, batch);
 
--- 3. Safely rebuild views (drop view and materialized view variants idempotently)
-drop view if exists item_stock_ledger cascade;
+-- 3. Safely rebuild views (drop materialized view FIRST to avoid PostgreSQL 42809 catalog type error)
 drop materialized view if exists item_stock_ledger cascade;
 drop materialized view if exists item_stock_ledger_mat cascade;
+drop view if exists item_stock_ledger cascade;
 
 create view item_stock_ledger as
 with txn as (
