@@ -1898,9 +1898,16 @@ var AdminView = {
 
   loadLedger: function () {
     document.getElementById('ad-ledgerTableWrap').innerHTML = skeletonBlock(120);
+    idbGet('ad_ledger').then(function (cached) {
+      if (cached && Array.isArray(cached) && cached.length && !AdminView.ledgerRows) {
+        AdminView.ledgerRows = cached;
+        AdminView.filterLedger();
+      }
+    });
     apiGet('/api/admin/ledger')
       .then(function (rows) {
         AdminView.ledgerRows = rows;
+        idbSet('ad_ledger', rows);
         updateDatalist('ad-items-datalist', rows, 'item_name');
         updateDatalist('ad-batches-datalist', rows, 'batch');
         AdminView.filterLedger();
@@ -1911,8 +1918,10 @@ var AdminView = {
         }
       })
       .catch(function (err) {
-        document.getElementById('ad-ledgerTableWrap').innerHTML =
-          emptyState('ph-warning-circle', 'Could not load stock ledger', err.message || 'Try refreshing the page.');
+        if (!AdminView.ledgerRows) {
+          document.getElementById('ad-ledgerTableWrap').innerHTML =
+            emptyState('ph-warning-circle', 'Could not load stock ledger', err.message || 'Try refreshing the page.');
+        }
       });
   },
 
@@ -1927,14 +1936,23 @@ var AdminView = {
 
   loadPlanning: function () {
     document.getElementById('ad-planTableWrap').innerHTML = skeletonBlock(120);
+    idbGet('ad_planning').then(function (cached) {
+      if (cached && Array.isArray(cached) && cached.length && !AdminView.planningRows) {
+        AdminView.planningRows = cached;
+        AdminView.filterPlanning();
+      }
+    });
     apiGet('/api/order-planning')
       .then(function (rows) {
         AdminView.planningRows = rows;
+        idbSet('ad_planning', rows);
         AdminView.filterPlanning();
       })
       .catch(function (err) {
-        document.getElementById('ad-planTableWrap').innerHTML =
-          emptyState('ph-warning-circle', 'Could not load order planning', err.message || 'Try refreshing the page.');
+        if (!AdminView.planningRows) {
+          document.getElementById('ad-planTableWrap').innerHTML =
+            emptyState('ph-warning-circle', 'Could not load order planning', err.message || 'Try refreshing the page.');
+        }
       });
   },
 
@@ -3254,4 +3272,56 @@ async function boot() {
   }
 }
 
+/* ------------------------ IndexedDB Cache Engine ------------------------- */
+var IDB_NAME = 'IMS_CACHE_DB';
+var IDB_VERSION = 1;
+var IDB_STORE = 'app_cache';
+
+function getIDB() {
+  return new Promise(function (resolve, reject) {
+    if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
+    var req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = function (e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+    req.onsuccess = function (e) { resolve(e.target.result); };
+    req.onerror = function (e) { reject(e.target.error); };
+  });
+}
+
+function idbGet(key) {
+  return getIDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction(IDB_STORE, 'readonly');
+      var store = tx.objectStore(IDB_STORE);
+      var req = store.get(key);
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }).catch(function () { return null; });
+}
+
+function idbSet(key, val) {
+  return getIDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction(IDB_STORE, 'readwrite');
+      var store = tx.objectStore(IDB_STORE);
+      var req = store.put(val, key);
+      req.onsuccess = function () { resolve(true); };
+      req.onerror = function () { reject(req.error); };
+    });
+  }).catch(function () { return false; });
+}
+
+/* ----------------------- Service Worker Registration ---------------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function () { /* ignore */ });
+  });
+}
+
 boot();
+
