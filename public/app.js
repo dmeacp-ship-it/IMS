@@ -727,6 +727,9 @@ function applyTheme(theme) {
   document.body.classList.toggle('light', theme === 'light');
   document.querySelectorAll('.theme-toggle i').forEach(function (ic) {
     ic.className = theme === 'light' ? 'ph ph-moon' : 'ph ph-sun';
+    ic.classList.remove('theme-ic-animate');
+    void ic.offsetWidth;
+    ic.classList.add('theme-ic-animate');
   });
 }
 
