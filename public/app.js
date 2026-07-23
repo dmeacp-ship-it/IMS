@@ -323,11 +323,12 @@ var VarianceReport = {
   populateBranchFilter: function (p) {
     var bf = document.getElementById(p + '-vr-branchFilter');
     if (!bf) return;
-    var current = bf.value;
     var codes = Array.from(new Set((VarianceReport.data[p] || []).map(function (r) { return r.branch_code; }))).sort();
     bf.innerHTML = '<option value="">All branches</option>'
       + codes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
-    bf.value = current;
+    if (codes.indexOf('AHMEDABAD-FACTORY') !== -1) {
+      bf.value = 'AHMEDABAD-FACTORY';
+    }
   },
 
   currentFiltered: function (p) {
@@ -1873,10 +1874,16 @@ var AdminView = {
     var optionsHtml = AdminView.allBranches.map(function (b) {
       return '<option value="' + b.code + '">' + b.name + '</option>';
     }).join('');
-    document.getElementById('ad-open-branch').innerHTML = optionsHtml;
-    document.getElementById('ad-conv-branch').innerHTML = optionsHtml;
-    document.getElementById('ad-ledgerBranchFilter').innerHTML = '<option value="">All branches</option>' + optionsHtml;
-    document.getElementById('ad-planBranchFilter').innerHTML = '<option value="">All branches</option>' + optionsHtml;
+    var ledgerSel = document.getElementById('ad-ledgerBranchFilter');
+    var planSel = document.getElementById('ad-planBranchFilter');
+    if (ledgerSel) {
+      ledgerSel.innerHTML = '<option value="">All branches</option>' + optionsHtml;
+      ledgerSel.value = 'AHMEDABAD-FACTORY';
+    }
+    if (planSel) {
+      planSel.innerHTML = '<option value="">All branches</option>' + optionsHtml;
+      planSel.value = 'AHMEDABAD-FACTORY';
+    }
 
     AdminView.customOpenBranch = makeCustomSelect('ad-open-branch', rawOptions, 'Select branch...');
     AdminView.customConvBranch = makeCustomSelect('ad-conv-branch', rawOptions, 'Select branch...');
