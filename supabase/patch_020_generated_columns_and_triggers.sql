@@ -3,8 +3,8 @@
 -- 1. Add Postgres GENERATED STORED column `normalized_item_name` to sales_transactions
 --    to eliminate dynamic regex execution across 50,000+ rows during live ledger reads.
 -- 2. Add B-Tree composite indexes on normalized_item_name for sub-2ms query scans.
--- 3. Update item_stock_ledger live view to utilize the stored column directly.
--- 4. Add asynchronous event-driven trigger for instantaneous matview refresh.
+-- 3. Safely rebuild item_stock_ledger view & item_stock_ledger_mat view with cascade.
+-- 4. Add asynchronous event-driven triggers for instantaneous matview refresh.
 -- ============================================================================
 
 -- 1. Add generated stored column for normalized item name (if not already present)
@@ -19,8 +19,10 @@ create index if not exists idx_sales_txn_source_norm
 create index if not exists idx_sales_txn_dest_norm
   on sales_transactions (destination_branch_code, normalized_item_name, batch);
 
--- 3. Optimized item_stock_ledger view utilizing stored column
-create or replace view item_stock_ledger as
+-- 3. Safely rebuild views (cascade cleanly drops dependent views/matviews before rebuilding)
+drop view if exists item_stock_ledger cascade;
+
+create view item_stock_ledger as
 with txn as (
   select
     source_branch_code,
@@ -82,7 +84,31 @@ left join inward_transfer it using (branch_code, item_name, batch)
 left join conv_out        co using (branch_code, item_name, batch)
 left join conv_in         ci using (branch_code, item_name, batch);
 
+-- Re-create item_stock_ledger_mat materialized view if dropped by CASCADE
+create materialized view if not exists item_stock_ledger_mat as
+  select * from item_stock_ledger;
+
+create unique index if not exists item_stock_ledger_mat_key
+  on item_stock_ledger_mat (branch_code, item_name, coalesce(batch, ''));
+
+create index if not exists item_stock_ledger_mat_branch
+  on item_stock_ledger_mat (branch_code);
+
+grant select on item_stock_ledger to anon, authenticated, service_role;
+grant select on item_stock_ledger_mat to anon, authenticated, service_role;
+
 -- 4. Event-driven asynchronous trigger for matview auto-refresh
+create or replace function refresh_item_stock_ledger()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  refresh materialized view concurrently item_stock_ledger_mat;
+end;
+$$;
+
 create or replace function trigger_refresh_ledger_snapshot()
 returns trigger as $$
 begin
