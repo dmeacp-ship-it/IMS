@@ -68,6 +68,11 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .table-scroll tbody tr {
+    contain: content;
+    will-change: transform;
+  }
+
   h1, h2, h3, h4, h5, h6, .btn, .sb-name, .ni, .tbl-ttl, th, .stat-n, .stat-l, .modal-ttl, label, .badge, .plant-pill, .fsec-ttl, .sb-sub, .rtag, .status-sel, .filter-sel, input, textarea, select {
     font-family: var(--font-ui);
   }
@@ -118,7 +123,7 @@
 
   /* ── Login ── */
   #loginScreen { position: fixed; inset: 0; background: var(--bg); display: none; align-items: center; justify-content: center; z-index: 300; padding: var(--s-24); }
-  .login-box { background: linear-gradient(180deg, var(--card), var(--surface)); border: 1px solid var(--border2); border-radius: 16px; padding: var(--s-40) var(--s-32); width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: loginRise 0.5s var(--ease-out) both; }
+  .login-box { background: linear-gradient(180deg, var(--card), var(--surface)); border: 1px solid var(--border2); border-radius: 16px; padding: var(--s-40) var(--s-32); width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: loginRise 0.5s var(--ease-out) both; will-change: transform, opacity; }
   @keyframes loginRise { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: none; } }
   .login-logo { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: var(--s-32); }
   .login-logo .logo-ic { width: 40px; height: 40px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
@@ -139,7 +144,7 @@
   .login-theme { display: flex; justify-content: center; margin-top: 20px; }
 
   /* ── Theme Toggle Animation ── */
-  .theme-ic-animate { animation: themeRotate 0.85s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; display: inline-block; transform-origin: center; }
+  .theme-ic-animate { animation: themeRotate 0.85s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; display: inline-block; transform-origin: center; will-change: transform, opacity; }
   @keyframes themeRotate {
     0% { transform: rotate(-180deg) scale(0.3); opacity: 0; }
     100% { transform: rotate(0deg) scale(1); opacity: 1; }
