@@ -27,6 +27,54 @@ app.use(function (req, res, next) {
   next();
 });
 
+/* ------------------------------- SSE REALTIME ---------------------------- */
+const clients = new Set();
+app.get('/api/stream', function (req, res) {
+  // We use standard SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  
+  // Only authenticated clients should be here (though we could enforce via auth.getSession)
+  const session = auth.getSession(req);
+  if (!session) {
+    res.status(401).end();
+    return;
+  }
+  
+  const client = { id: Date.now(), res, role: session.role, branchCode: session.branchCode };
+  clients.add(client);
+  
+  req.on('close', () => {
+    clients.delete(client);
+  });
+});
+
+// Broadcast events from Supabase to SSE clients
+function broadcastRealtimeEvent(payload) {
+  const dataString = JSON.stringify(payload);
+  for (const client of clients) {
+    // Optionally filter by branchCode if applicable, but for now broadcast to all
+    client.res.write(`data: ${dataString}\n\n`);
+  }
+}
+
+// Subscribe to Supabase Realtime (assuming lib/supabase exports the client)
+const { supabase } = require('../lib/supabase');
+if (supabase) {
+  supabase
+    .channel('public-tables')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'branch_transfers' }, (payload) => {
+      broadcastRealtimeEvent({ type: 'transfer_update', payload });
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'item_transactions' }, (payload) => {
+      broadcastRealtimeEvent({ type: 'transaction_update', payload });
+    })
+    .subscribe();
+}
+
+
 /* Wrap an async (req) => result handler into an Express handler with uniform
    error → JSON mapping. */
 function handle(fn, cacheHeader) {

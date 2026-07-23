@@ -1226,6 +1226,7 @@ var BranchView = {
   render: function (data) {
     document.getElementById('br-branchLabel').textContent = data.branchCode;
     document.getElementById('br-incomingCount').textContent = data.incomingTransfers.length;
+    if (data.outwardTrend) drawSparkline(data.outwardTrend, 'br-trendChart');
 
     var navBadge = document.getElementById('br-nav-badge');
     if (navBadge) {
@@ -2043,6 +2044,7 @@ var AdminView = {
     document.getElementById('ad-totalBranches').textContent = data.totalBranches;
     document.getElementById('ad-inTransitCount').textContent = data.inTransitCount;
     document.getElementById('ad-receivedCount').textContent = data.receivedCount;
+    if (data.outwardTrend) drawSparkline(data.outwardTrend, 'ad-trendChart');
 
     var transferRows = data.transfers.slice(0, 50).map(function (t) {
       var badge = t.status === 'RECEIVED'
@@ -3268,6 +3270,27 @@ async function boot() {
   wireModals();
   wirePasswordChangeHandlers();
   wireRipples();
+  setupOfflineHandling();
+
+  function setupOfflineHandling() {
+    function updateOnlineStatus() {
+      if (navigator.onLine) {
+        document.body.classList.remove('offline');
+        toast('success', 'Back online. Syncing pending data...');
+        if ('serviceWorker' in navigator && 'SyncManager' in window) {
+          navigator.serviceWorker.ready.then(function(reg) {
+            reg.sync.register('ims-sync');
+          });
+        }
+      } else {
+        document.body.classList.add('offline');
+        toast('warning', 'You are offline. Actions will be saved and synced later.');
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    if (!navigator.onLine) updateOnlineStatus();
+  }
 
   function launchApp() {
     if (!SESSION) {
@@ -3308,7 +3331,29 @@ async function boot() {
       default:
         showView('view-login');
         Login.init();
+        return; // Don't setup realtime if not logged in
     }
+
+    // Connect to SSE Realtime Updates
+    setupRealtime();
+  }
+
+  function setupRealtime() {
+    var source = new EventSource('/api/stream');
+    source.onmessage = function (event) {
+      try {
+        var data = JSON.parse(event.data);
+        // We debounce the refresh slightly in case of bulk changes
+        clearTimeout(window._rtTimer);
+        window._rtTimer = setTimeout(function() {
+          if (SESSION.role === 'BRANCH') BranchView.load();
+          else if (SESSION.role === 'ADMIN' || SESSION.role === 'SUPER_ADMIN') AdminView.loadAll();
+          else if (SESSION.role === 'HOD') HodView.load();
+        }, 500);
+      } catch (e) {
+        // ignore JSON parse errors
+      }
+    };
   }
 
   var cached = null;
@@ -3338,6 +3383,37 @@ async function boot() {
     }
     launchApp();
   }
+}
+
+/* ------------------------ Sparkline Chart ------------------------- */
+function drawSparkline(data, containerId) {
+  var el = document.getElementById(containerId);
+  if (!el || !data || data.length === 0) return;
+  
+  var w = el.clientWidth || 300;
+  var h = el.clientHeight || 60;
+  var max = Math.max.apply(null, data);
+  if (max === 0) max = 1;
+  
+  var points = [];
+  for (var i = 0; i < data.length; i++) {
+    var x = (i / (data.length - 1)) * w;
+    var y = h - ((data[i] / max) * (h - 10)) - 5;
+    points.push(x + ',' + y);
+  }
+  
+  var path = 'M ' + points.join(' L ');
+  
+  // Fill gradient
+  var fillPath = path + ' L ' + w + ',' + h + ' L 0,' + h + ' Z';
+  
+  var svg = '<svg width="100%" height="100%" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">'
+    + '<defs><linearGradient id="g-' + containerId + '" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>'
+    + '<path d="' + fillPath + '" fill="url(#g-' + containerId + ')" stroke="none" />'
+    + '<path d="' + path + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />'
+    + '</svg>';
+    
+  el.innerHTML = svg;
 }
 
 /* ------------------------ IndexedDB Cache Engine ------------------------- */
