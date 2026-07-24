@@ -23,7 +23,7 @@ app.use(function (req, res, next) {
   const supabaseUrl = process.env.SUPABASE_URL || '';
   // Fonts + icons are now self-hosted, so no third-party origins are needed —
   // everything but the Supabase API endpoint is locked to same-origin.
-  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${supabaseUrl};`);
+  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ${supabaseUrl};`);
   next();
 });
 

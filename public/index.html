@@ -13,9 +13,10 @@
        same-origin, so no preconnect / async-swap trick is needed. The icon font
        is subset to just the ~43 glyphs the app uses (~6 KB vs the full set), and
        the Google families are the latin/latin-ext woff2 subsets only. -->
-  <link rel="preload" href="/fonts/ibm-plex-sans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preload" href="/fonts/phosphor-subset.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/fonts/fonts.css?v=1">
   <link rel="stylesheet" href="/fonts/phosphor.css?v=1">
   <link rel="stylesheet" href="/styles.min.css?v=8.0">
 </head>
