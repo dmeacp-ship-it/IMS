@@ -707,6 +707,7 @@ function wireSidebarNav() {
         prefetched[page] = true;
         if (page === 'ledger' && typeof AdminView !== 'undefined' && AdminView.loadLedger) { AdminView.loadLedger(); }
         else if (page === 'planning' && typeof AdminView !== 'undefined' && AdminView.loadPlanning) { AdminView.loadPlanning(); }
+        else if (page === 'summary' && typeof AdminView !== 'undefined' && AdminView.loadBranchSummary) { AdminView.loadBranchSummary(); }
         else if (page === 'variance' && typeof VarianceReport !== 'undefined' && VarianceReport.load) { VarianceReport.load('ad'); }
       });
       item.addEventListener('click', function () {
@@ -1456,17 +1457,11 @@ var AdminView = {
       });
     });
 
-    if (document.getElementById('ad-nav-summary')) {
-      document.getElementById('ad-nav-summary').addEventListener('click', AdminView.openBranchSummary);
-    }
     if (document.getElementById('ad-openSummaryBtn')) {
-      document.getElementById('ad-openSummaryBtn').addEventListener('click', AdminView.openBranchSummary);
-    }
-    if (document.getElementById('ad-summaryCloseBtn')) {
-      document.getElementById('ad-summaryCloseBtn').addEventListener('click', AdminView.closeBranchSummary);
-    }
-    if (document.getElementById('ad-summaryCloseBtn2')) {
-      document.getElementById('ad-summaryCloseBtn2').addEventListener('click', AdminView.closeBranchSummary);
+      document.getElementById('ad-openSummaryBtn').addEventListener('click', function () {
+        var nav = document.getElementById('ad-nav-summary');
+        if (nav) nav.click();
+      });
     }
     if (document.getElementById('ad-summaryRefreshBtn')) {
       document.getElementById('ad-summaryRefreshBtn').addEventListener('click', function () {

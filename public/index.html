@@ -381,6 +381,20 @@
     </div>
 
     <div class="content" role="main">
+      <!-- BRANCH SUMMARY PAGE -->
+      <div class="panel" id="ad-summaryPanel" data-page="summary" style="display:none;">
+        <div class="panel-header">
+          <span><i class="ph ph-buildings"></i>All-Branch Stock Summary</span>
+          <div class="panel-header-tools">
+            <button class="btn btn-ghost btn-small" id="ad-summaryRefreshBtn" title="Refresh Summary"><i class="ph ph-arrows-clockwise" id="ad-summaryRefreshIcon"></i>Refresh</button>
+            <button class="btn btn-ghost btn-small" id="ad-summaryExportBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export CSV</button>
+          </div>
+        </div>
+        <div id="ad-summaryTableWrap" class="table-scroll">
+          <div class="skeleton" style="height:160px; margin:16px; border-radius:12px;"></div>
+        </div>
+      </div>
+
       <div class="stat-row" id="ad-statRow" data-page="ledger">
         <div class="stat-card goto" data-goto="ledger" title="View stock ledger" style="--stat-color: var(--accentH)">
           <div class="stat-ic-bubble"><i class="ph ph-buildings"></i></div>
@@ -1042,25 +1056,5 @@
   </div>
 
   <script src="/app.min.js?v=9.8" defer></script>
-  <div id="ad-branchSummaryOverlay" class="overlay" style="display:none;">
-    <div class="modal large" style="max-width: 980px; width: 92vw; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
-      <div class="modal-header" style="justify-content: space-between; flex-wrap: wrap;">
-        <div class="modal-ttl"><i class="ph ph-buildings"></i>All-Branch Stock Summary</div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="btn btn-ghost btn-small" id="ad-summaryExportBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export CSV</button>
-          <button class="btn btn-ghost btn-small" id="ad-summaryRefreshBtn" title="Refresh Summary"><i class="ph ph-arrows-clockwise" id="ad-summaryRefreshIcon"></i>Refresh</button>
-          <button class="btn btn-ghost btn-small" id="ad-summaryCloseBtn" style="padding: 4px 8px;"><i class="ph ph-x"></i></button>
-        </div>
-      </div>
-      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
-        <div id="ad-summaryTableWrap" class="table-scroll"><div class="skeleton" style="height:140px; border-radius:12px;"></div></div>
-      </div>
-      <div class="modal-ft" style="padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; color: var(--sub);" id="ad-summaryAsOf">Aggregated stock across all active outlets</span>
-        <button class="btn btn-ghost btn-small" id="ad-summaryCloseBtn2">Close</button>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>
