@@ -572,11 +572,15 @@ function makeCustomSelect(selectId, options, placeholder) {
       item.addEventListener('click', function (e) {
         e.stopPropagation();
         selectEl.value = opt.value;
-        
-        var evt = document.createEvent('HTMLEvents');
-        evt.initEvent('change', true, true);
-        selectEl.dispatchEvent(evt);
-        
+
+        try {
+          selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch (err) {
+          var evt = document.createEvent('HTMLEvents');
+          evt.initEvent('change', true, true);
+          selectEl.dispatchEvent(evt);
+        }
+
         wrapper.querySelectorAll('.custom-select-option').forEach(function (el) {
           el.classList.remove('selected');
         });
@@ -2105,11 +2109,17 @@ var AdminView = {
   },
 
   filterLedger: function () {
-    var term = document.getElementById('ad-ledgerSearch').value;
+    var term = (document.getElementById('ad-ledgerSearch').value || '').trim();
     var branchFilter = document.getElementById('ad-ledgerBranchFilter').value;
-    var rows = AdminView.ledgerRows;
-    if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
-    rows = filterLedgerRows(rows, term, { showBranch: true });
+    var rows = AdminView.ledgerRows || [];
+
+    if (branchFilter) {
+      rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
+    }
+    if (term) {
+      rows = filterLedgerRows(rows, term, { showBranch: true });
+    }
+
     paintLedger(document.getElementById('ad-ledgerTableWrap'), rows, { showBranch: true });
   },
 
