@@ -2179,8 +2179,8 @@ var AdminView = {
 
     var totOpen = 0, totInward = 0, totOutward = 0, totTransit = 0, totClosing = 0;
 
-    var html = '<table role="table" aria-label="Branch Stock Summary" class="op-sheet"><thead><tr>'
-      + '<th scope="col" style="background: var(--accent) !important; color: #fff !important;">Branch Name</th>'
+    var html = '<table role="table" aria-label="Branch Stock Summary" class="summary-table"><thead><tr>'
+      + '<th scope="col">Branch Name</th>'
       + '<th scope="col" style="text-align:center;">Opening Date</th>'
       + '<th scope="col" style="text-align:right;">Opening Stock</th>'
       + '<th scope="col" style="text-align:right;">Inward Qty</th>'
