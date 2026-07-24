@@ -653,6 +653,79 @@
 
   .error-text { color: var(--red); font-size: 13px; margin: -8px 0 16px; min-height: 1em; }
 
+  /* ── Info Button & Multi-lingual Popover Tooltip ── */
+  .info-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .info-icon-btn {
+    font-size: 16px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 50%;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+  .info-icon-btn:hover {
+    transform: scale(1.2);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  .info-tooltip-card {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 380px;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    z-index: 100;
+    display: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: auto;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+  }
+  body.light .info-tooltip-card {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  }
+  .info-tooltip-wrap:hover .info-tooltip-card,
+  .info-tooltip-wrap:focus-within .info-tooltip-card {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .info-sec-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .info-tooltip-card ul {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 11.5px;
+    color: var(--sub);
+    line-height: 1.55;
+  }
+  .info-tooltip-card ul li {
+    margin-bottom: 4px;
+  }
+  .info-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 10px 0;
+  }
   /* ═══════════════════════════════════════════════════════════
      UI polish pass — spacing, stat cards, modals, forms, motion
   ═══════════════════════════════════════════════════════════ */

@@ -421,7 +421,31 @@
 
       <div class="panel" id="ad-planningPanel" data-page="planning" style="overflow: visible;">
         <div class="panel-header">
-          <span><i class="ph ph-chart-line-up"></i>Order planning — ratings &amp; grades</span>
+          <span style="display:inline-flex; align-items:center; gap:8px;">
+            <i class="ph ph-chart-line-up"></i>Order planning — ratings &amp; grades
+            <span class="info-tooltip-wrap">
+              <i class="ph ph-info info-icon-btn" tabIndex="0" aria-label="Calculation guide"></i>
+              <div class="info-tooltip-card">
+                <div class="info-sec-title">🇬🇧 Calculation Guide (English)</div>
+                <ul>
+                  <li><strong>4m Avg:</strong> Mean of the four 30-day sales slabs.</li>
+                  <li><strong>Order %:</strong> Policy matrix (N Rating × Branch Grade).</li>
+                  <li><strong>Gross Req:</strong> Order % × 4m Avg × 2 months.</li>
+                  <li><strong>Actual Req:</strong> Gross Req − Closing Stock − In-Transit.</li>
+                  <li><strong>Auto-save:</strong> Order entry fields save automatically as you type.</li>
+                </ul>
+                <div class="info-divider"></div>
+                <div class="info-sec-title">🇮🇳 गणना निर्देश (Hindi)</div>
+                <ul>
+                  <li><strong>4m Avg (औसत बिक्री):</strong> पिछले 4 महीनों (30-30 दिनों) की बिक्री का औसत।</li>
+                  <li><strong>Order % (ऑर्डर प्रतिशत):</strong> पॉलिसी मैट्रिक्स (N Rating × ब्रांच ग्रेड)।</li>
+                  <li><strong>Gross Req (कुल आवश्यकता):</strong> Order % × 4m Avg × 2 महीने।</li>
+                  <li><strong>Actual Req (वास्तविक आवश्यकता):</strong> Gross Req − क्लोजिंग स्टॉक − इन-ट्रांजिट स्टॉक।</li>
+                  <li><strong>ऑटो-सेव:</strong> आपके टाइप करते ही ऑर्डर विवरण अपने आप सेव हो जाता है।</li>
+                </ul>
+              </div>
+            </span>
+          </span>
           <div class="panel-header-tools">
             <input type="text" id="ad-planSearch" placeholder="Search item, size, or branch…">
             <select id="ad-planBranchFilter"><option value="">All branches</option><option value="AHMEDABAD-FACTORY" selected>Ahmedabad- ACP Industries Depot</option></select>
@@ -437,9 +461,6 @@
             <button class="btn btn-ghost btn-compact btn-icon-only" id="ad-planExportBtn" title="Export CSV"><i class="ph ph-download-simple"></i></button>
             <button class="btn btn-primary btn-compact btn-icon-only" id="ad-planSaveDraftBtn" title="Save Draft"><i class="ph ph-floppy-disk"></i></button>
           </div>
-        </div>
-        <div style="padding: 10px 20px 0; font-size: 12px; color: var(--sub); line-height: 1.5;">
-          The order worksheet. <strong>4m Avg</strong> = mean of the four 30-day sales slabs. <strong>Order %</strong> = policy matrix (N Rating × Branch Grade). <strong>Gross Req</strong> = Order % × 4m Avg × 2 months. <strong>Actual Req.</strong> = Gross Req − Closing − In-Transit. The <strong>Order entry</strong> columns (Actual Order, Remarks, Appvd Order, Factory Remark, Batch) save automatically as you type. Pick a branch for the cleanest view.
         </div>
         <div id="ad-planTableWrap" class="table-scroll"><div class="skeleton" style="height:120px; margin:16px; border-radius:12px;"></div></div>
       </div>
