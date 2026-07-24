@@ -271,7 +271,7 @@
   .tb-l h1 { font-size: 18px; font-family: var(--font-ui); font-weight: 700; letter-spacing: -0.3px; }
   .tb-l span { font-size: 13px; color: var(--muted); }
   .tb-r { display: flex; align-items: center; gap: var(--s-12); }
-  .content { flex: 1; overflow-y: auto; padding: var(--s-48); position: relative; }
+  .content { flex: 1; overflow-y: auto; padding: 16px 24px 24px; position: relative; }
   .content::before {
     content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
     background-image: radial-gradient(circle at 1px 1px, var(--border2) 0.5px, transparent 0.5px);
@@ -633,9 +633,9 @@
   }
   body:not(.light) .panel { box-shadow: 0 15px 30px -5px rgba(0,0,0,0.5); }
   .panel:has(.custom-select-container.open) { overflow: visible !important; }
-  .panel-header { position: relative; z-index: 20; padding: var(--s-16) var(--s-24); border-bottom: 1px solid var(--border); font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-12); }
-  .panel-header-tools { display: flex; gap: var(--s-12); flex-wrap: wrap; align-items: center; }
-  .panel-header-tools input, .panel-header-tools select { margin-bottom: 0; width: auto; max-width: 240px; }
+  .panel-header { position: relative; z-index: 20; padding: 12px 20px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 13px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s-12); }
+  .panel-header-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; justify-content: flex-end; }
+  .panel-header-tools input, .panel-header-tools select { margin-bottom: 0; width: auto; max-width: 240px; height: 32px; font-size: 12px; }
   .panel-header-tools .custom-select-container { width: 300px; margin-bottom: 0; }
 
   .mono, td { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -1355,8 +1355,8 @@ body:not(.light) .op-head-branch {
 
 .op-cell { padding: 3px 4px !important; }
 .op-edit {
-  width: 85px;
-  padding: 3px 6px;
+  width: 72px;
+  padding: 3px 5px;
   font-size: 11.5px;
   height: 26px;
   border: 1px solid var(--border2);
@@ -1364,7 +1364,7 @@ body:not(.light) .op-head-branch {
   background: var(--bg);
   color: var(--text);
 }
-.op-edit[type="text"] { width: 130px; }
+.op-edit[type="text"] { width: 105px; }
 .op-edit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent); }
 .op-edit.op-saving { opacity: 0.5; }
 .op-edit.op-saved { border-color: #16a34a; }

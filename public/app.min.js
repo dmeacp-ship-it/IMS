@@ -1000,7 +1000,7 @@ function planningHeadHTML(showBranch) {
     + '</tr><tr>'
     + '<th class="op-sub-sales">91-120</th><th class="op-sub-sales">61-90</th><th class="op-sub-sales">31-60</th><th class="op-sub-sales">01-30</th><th class="op-sub-sales">4m Avg</th>'
     + '<th class="op-sub-req">Avg Req.</th><th class="op-sub-req">Closing</th><th class="op-sub-req">In-Transit</th><th class="op-sub-req">N Rating</th><th class="op-sub-req">Br. Grade</th><th class="op-sub-req">Order %</th><th class="op-sub-req">Gross Req</th><th class="op-sub-req">Actual Req.</th>'
-    + '<th class="op-sub-order">Actual Order</th><th class="op-sub-order">Branch Remarks</th><th class="op-sub-order">Appvd Order</th><th class="op-sub-order">Factory Remark</th><th class="op-sub-order">Batch</th>'
+    + '<th class="op-sub-order" title="Actual Order">Act. Order</th><th class="op-sub-order" title="Branch Remarks">Br. Remarks</th><th class="op-sub-order" title="Approved Order">App. Order</th><th class="op-sub-order" title="Factory Remark">Fact. Remark</th><th class="op-sub-order">Batch</th>'
     + '</tr>';
 }
 function planningRowHTML(r, showBranch) {
