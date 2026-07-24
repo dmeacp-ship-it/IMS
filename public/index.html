@@ -457,13 +457,13 @@
               <option value="CUS">CUS</option>
             </select>
             <select id="ad-planSort" title="Sort order planning items">
-              <option value="default">Sort: Default (Family Sales)</option>
-              <option value="closing_desc">Closing Stock (Z to A)</option>
-              <option value="closing_asc">Closing Stock (A to Z)</option>
-              <option value="branch_grade_asc">Branch Grade (A1 to D)</option>
-              <option value="n_rating_desc">National Rating (High to Low)</option>
-              <option value="req_desc">Actual Req (High to Low)</option>
-              <option value="sales_desc">4M Sales Avg (High to Low)</option>
+              <option value="branch_grade_asc" selected>Sort: Default (Branch Grade A1 ➔ D)</option>
+              <option value="default">Sort: Legacy (Family Sales)</option>
+              <option value="closing_desc">Closing Stock (Z ➔ A)</option>
+              <option value="closing_asc">Closing Stock (A ➔ Z)</option>
+              <option value="n_rating_desc">National Rating (High ➔ Low)</option>
+              <option value="req_desc">Actual Req (High ➔ Low)</option>
+              <option value="sales_desc">4M Sales Avg (High ➔ Low)</option>
             </select>
             <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--sub); white-space:nowrap;"><input type="checkbox" id="ad-planNeedsOrder"> Needs order</label>
             <button class="btn btn-ghost btn-compact btn-icon-only" id="ad-planRefreshBtn" title="Refresh planning ratings"><i class="ph ph-arrows-clockwise" id="ad-planRefreshIcon"></i></button>

@@ -1945,12 +1945,20 @@ var AdminView = {
   },
 
   populateLedgerBranchDropdowns: function () {
+    function formatBranchShortName(code, name) {
+      if (!code) return name || '';
+      var parts = code.split('-');
+      return parts.map(function (p) {
+        return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+      }).join('-');
+    }
+
     var rawOptions = AdminView.allBranches.map(function (b) {
-      return { value: b.code, text: b.name };
+      return { value: b.code, text: formatBranchShortName(b.code, b.name) };
     });
     
     var optionsHtml = AdminView.allBranches.map(function (b) {
-      return '<option value="' + b.code + '">' + b.name + '</option>';
+      return '<option value="' + b.code + '">' + formatBranchShortName(b.code, b.name) + '</option>';
     }).join('');
     var ledgerSel = document.getElementById('ad-ledgerBranchFilter');
     var planSel = document.getElementById('ad-planBranchFilter');
@@ -1971,15 +1979,15 @@ var AdminView = {
     AdminView.customPlanBranchFilter = makeCustomSelect('ad-planBranchFilter', filterOptions, 'All branches');
 
     var sortOpts = [
-      { value: 'default', text: 'Sort: Default (Family Sales)' },
+      { value: 'branch_grade_asc', text: 'Branch Grade (A1 ➔ D)' },
+      { value: 'default', text: 'Default (Family Sales)' },
       { value: 'closing_desc', text: 'Closing Stock (Z ➔ A)' },
       { value: 'closing_asc', text: 'Closing Stock (A ➔ Z)' },
-      { value: 'branch_grade_asc', text: 'Branch Grade (A1 ➔ D)' },
       { value: 'n_rating_desc', text: 'National Rating (High ➔ Low)' },
       { value: 'req_desc', text: 'Actual Req (High ➔ Low)' },
       { value: 'sales_desc', text: '4M Sales Avg (High ➔ Low)' }
     ];
-    AdminView.customPlanSort = makeCustomSelect('ad-planSort', sortOpts, 'Sort: Default (Family Sales)');
+    AdminView.customPlanSort = makeCustomSelect('ad-planSort', sortOpts, 'Branch Grade (A1 ➔ D)');
   },
 
   loadLedger: function () {
@@ -2047,7 +2055,7 @@ var AdminView = {
     var grade = document.getElementById('ad-planGradeFilter').value;
     var branchFilter = document.getElementById('ad-planBranchFilter').value;
     var needsOrder = document.getElementById('ad-planNeedsOrder').checked;
-    var sortBy = document.getElementById('ad-planSort') ? document.getElementById('ad-planSort').value : 'default';
+    var sortBy = document.getElementById('ad-planSort') ? (document.getElementById('ad-planSort').value || 'branch_grade_asc') : 'branch_grade_asc';
 
     var rows = AdminView.planningRows.slice();
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });

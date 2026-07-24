@@ -1065,8 +1065,23 @@
   }
 
   .custom-select-options {
+    max-height: 200px;
     overflow-y: auto;
     flex-grow: 1;
+  }
+  .custom-select-options::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-select-options::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-radius: 3px;
+  }
+  .custom-select-options::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 3px;
+  }
+  .custom-select-options::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
   }
 
   .custom-select-option {
