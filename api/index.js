@@ -12,7 +12,7 @@ const data = require('../lib/data');
 
 const app = express();
 app.use(compression());
-app.use(express.json({ limit: '5mb' })); // bulk opening-stock uploads can be large
+app.use(express.json({ limit: '25mb' })); // bulk transfer/opening-stock uploads can be large
 app.use(cookieParser());
 
 app.use(function (req, res, next) {
