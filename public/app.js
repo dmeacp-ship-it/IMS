@@ -993,14 +993,14 @@ function opInput(r, field, type, value) {
 function planningHeadHTML(showBranch) {
   return '<tr>'
     + '<th rowspan="2" class="op-sticky">Item</th>'
-    + (showBranch ? '<th rowspan="2">Branch</th>' : '')
-    + '<th colspan="5" class="op-gh">Sales history</th>'
-    + '<th colspan="8" class="op-gh">Requirement</th>'
-    + '<th colspan="5" class="op-gh">Order entry</th>'
+    + (showBranch ? '<th rowspan="2" class="op-head-branch">Branch</th>' : '')
+    + '<th colspan="5" class="op-gh op-gh-sales">Sales history</th>'
+    + '<th colspan="8" class="op-gh op-gh-req">Requirement</th>'
+    + '<th colspan="5" class="op-gh op-gh-order">Order entry</th>'
     + '</tr><tr>'
-    + '<th>91-120</th><th>61-90</th><th>31-60</th><th>01-30</th><th>4m Avg</th>'
-    + '<th>Avg Req.</th><th>Closing</th><th>In-Transit</th><th>N Rating</th><th>Br. Grade</th><th>Order %</th><th>Gross Req</th><th>Actual Req.</th>'
-    + '<th>Actual Order</th><th>Branch Remarks</th><th>Appvd Order</th><th>Factory Remark</th><th>Batch</th>'
+    + '<th class="op-sub-sales">91-120</th><th class="op-sub-sales">61-90</th><th class="op-sub-sales">31-60</th><th class="op-sub-sales">01-30</th><th class="op-sub-sales">4m Avg</th>'
+    + '<th class="op-sub-req">Avg Req.</th><th class="op-sub-req">Closing</th><th class="op-sub-req">In-Transit</th><th class="op-sub-req">N Rating</th><th class="op-sub-req">Br. Grade</th><th class="op-sub-req">Order %</th><th class="op-sub-req">Gross Req</th><th class="op-sub-req">Actual Req.</th>'
+    + '<th class="op-sub-order">Actual Order</th><th class="op-sub-order">Branch Remarks</th><th class="op-sub-order">Appvd Order</th><th class="op-sub-order">Factory Remark</th><th class="op-sub-order">Batch</th>'
     + '</tr>';
 }
 function planningRowHTML(r, showBranch) {

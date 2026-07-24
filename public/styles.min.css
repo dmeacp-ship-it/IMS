@@ -1160,11 +1160,30 @@ html.theme-transition::view-transition-new(root) {
 }
 /* ── Order Planning Sheet & Freeze Columns ── */
 .op-sheet { border-collapse: separate !important; border-spacing: 0 !important; }
-.op-sheet thead th { white-space: nowrap; }
+.op-sheet thead th {
+  white-space: nowrap;
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+  background-clip: padding-box !important;
+}
 
-/* 2-row sticky headers */
-.op-sheet thead tr:first-child th { position: sticky; top: 0; z-index: 10; }
-.op-sheet thead tr:nth-child(2) th { position: sticky; top: 39px; z-index: 9; }
+/* 2-row sticky headers - zero gap positioning */
+.op-sheet thead tr:first-child th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  height: 32px !important;
+  padding: 6px 10px !important;
+}
+.op-sheet thead tr:nth-child(2) th {
+  position: sticky !important;
+  top: 32px !important;
+  z-index: 19 !important;
+  height: 28px !important;
+  padding: 5px 8px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+}
 
 /* Top-left corner frozen header ("Item" column) */
 th.op-sticky {
@@ -1175,6 +1194,7 @@ th.op-sticky {
   background: var(--accent) !important;
   color: #ffffff !important;
   min-width: 220px !important;
+  height: 60px !important;
   box-shadow: 3px 0 8px rgba(0,0,0,0.15) !important;
 }
 
@@ -1200,14 +1220,64 @@ body:not(.light) tbody tr:hover td.op-sticky {
   background: color-mix(in srgb, var(--accent) 12%, var(--card)) !important;
 }
 
+/* Section Header & Column Colors - Fully Opaque */
 .op-gh {
-  text-align: center;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--sub);
-  background: rgba(127,127,127,0.12) !important;
+  text-align: center !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+/* Sales History Group (Indigo/Blue Accent) */
+.op-gh-sales, .op-sub-sales {
+  background: #eef2ff !important;
+  color: #3730a3 !important;
+  border-bottom: 1px solid #c7d2fe !important;
+  border-right: 1px solid #e0e7ff !important;
+}
+body:not(.light) .op-gh-sales, body:not(.light) .op-sub-sales {
+  background: #1e1b4b !important;
+  color: #e0e7ff !important;
+  border-bottom: 1px solid #312e81 !important;
+  border-right: 1px solid #312e81 !important;
+}
+
+/* Requirement Group (Emerald/Green Accent) */
+.op-gh-req, .op-sub-req {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+  border-bottom: 1px solid #bbf7d0 !important;
+  border-right: 1px solid #dcfce7 !important;
+}
+body:not(.light) .op-gh-req, body:not(.light) .op-sub-req {
+  background: #064e3b !important;
+  color: #dcfce7 !important;
+  border-bottom: 1px solid #047857 !important;
+  border-right: 1px solid #047857 !important;
+}
+
+/* Order Entry Group (Amber/Warm Accent) */
+.op-gh-order, .op-sub-order {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  border-bottom: 1px solid #fde68a !important;
+  border-right: 1px solid #fef3c7 !important;
+}
+body:not(.light) .op-gh-order, body:not(.light) .op-sub-order {
+  background: #451a03 !important;
+  color: #fef3c7 !important;
+  border-bottom: 1px solid #78350f !important;
+  border-right: 1px solid #78350f !important;
+}
+
+.op-head-branch {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+body:not(.light) .op-head-branch {
+  background: #1e293b !important;
+  color: #cbd5e1 !important;
 }
 
 .op-cell { padding: 3px 4px !important; }
