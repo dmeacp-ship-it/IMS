@@ -2969,6 +2969,11 @@ AdminView.initAudit = function () {
   var uploadBtn = document.getElementById('ad-audit-uploadBtn');
   var fileNameEl = document.getElementById('ad-audit-fileName');
   var uploadResultEl = document.getElementById('ad-audit-uploadResult');
+  var chooseBtn = document.getElementById('ad-audit-chooseBtn');
+
+  if (chooseBtn && fileInput) {
+    chooseBtn.addEventListener('click', function () { fileInput.click(); });
+  }
 
   if (fileInput && uploadBtn) {
     fileInput.addEventListener('change', function () {
@@ -3303,6 +3308,11 @@ BranchView.initAudit = function () {
   var uploadBtn = document.getElementById('br-audit-uploadBtn');
   var fileNameEl = document.getElementById('br-audit-fileName');
   var uploadResultEl = document.getElementById('br-audit-uploadResult');
+  var chooseBtn = document.getElementById('br-audit-chooseBtn');
+
+  if (chooseBtn && fileInput) {
+    chooseBtn.addEventListener('click', function () { fileInput.click(); });
+  }
 
   if (fileInput && uploadBtn) {
     fileInput.addEventListener('change', function () {

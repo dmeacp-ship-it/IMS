@@ -231,7 +231,7 @@
                   <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
                   <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
                   <input type="file" id="br-audit-fileInput" accept=".csv" style="display: none;">
-                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('br-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <button class="btn btn-ghost btn-small" id="br-audit-chooseBtn"><i class="ph ph-file"></i>Choose File</button>
                   <div id="br-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
                 </div>
                 
@@ -573,7 +573,7 @@
                   <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
                   <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
                   <input type="file" id="ad-audit-fileInput" accept=".csv" style="display: none;">
-                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('ad-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <button class="btn btn-ghost btn-small" id="ad-audit-chooseBtn"><i class="ph ph-file"></i>Choose File</button>
                   <div id="ad-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
                 </div>
                 
@@ -1069,6 +1069,6 @@
     </div>
   </div>
 
-  <script src="/app.min.js?v=9.8" defer></script>
+  <script src="/app.min.js?v=9.9" defer></script>
 </body>
 </html>

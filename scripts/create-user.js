@@ -14,14 +14,10 @@
 
 require('dotenv/config');
 
-const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
+const { hashPassword } = require('../lib/auth'); // shared salted-scrypt hasher
 
 const ROLES = ['SUPER_ADMIN', 'ADMIN', 'BRANCH', 'HOD'];
-
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(String(password), 'utf8').digest('hex');
-}
 
 async function main() {
   const args = process.argv.slice(2);
