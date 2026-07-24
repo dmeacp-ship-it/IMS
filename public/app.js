@@ -1367,6 +1367,9 @@ var AdminView = {
     document.getElementById('ad-planSearch').addEventListener('input', debounce(AdminView.filterPlanning));
     document.getElementById('ad-planBranchFilter').addEventListener('change', AdminView.filterPlanning);
     document.getElementById('ad-planGradeFilter').addEventListener('change', AdminView.filterPlanning);
+    if (document.getElementById('ad-planSort')) {
+      document.getElementById('ad-planSort').addEventListener('change', AdminView.filterPlanning);
+    }
     document.getElementById('ad-planNeedsOrder').addEventListener('change', AdminView.filterPlanning);
 
     // Autosave for the worksheet's editable cells (event delegation — the table
@@ -1413,9 +1416,29 @@ var AdminView = {
       var term = document.getElementById('ad-planSearch').value;
       var grade = document.getElementById('ad-planGradeFilter').value;
       var branchFilter = document.getElementById('ad-planBranchFilter').value;
-      var rows = AdminView.planningRows;
+      var needsOrder = document.getElementById('ad-planNeedsOrder') ? document.getElementById('ad-planNeedsOrder').checked : false;
+      var sortBy = document.getElementById('ad-planSort') ? document.getElementById('ad-planSort').value : 'default';
+
+      var rows = AdminView.planningRows.slice();
       if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
       rows = filterPlanningRows(rows, term, grade);
+      if (needsOrder) rows = rows.filter(function (r) { return opRecommend(r).actualReq > 0; });
+
+      // Apply Export Sorting
+      if (sortBy === 'closing_desc') {
+        rows.sort(function (a, b) { return (opNum(b.current_stock) - opNum(a.current_stock)); });
+      } else if (sortBy === 'closing_asc') {
+        rows.sort(function (a, b) { return (opNum(a.current_stock) - opNum(b.current_stock)); });
+      } else if (sortBy === 'n_rating_desc') {
+        rows.sort(function (a, b) { return ((opNum(b.n_rating) || 0) - (opNum(a.n_rating) || 0)); });
+      } else if (sortBy === 'branch_grade_asc') {
+        var gMap = { 'A1': 1, 'A2': 2, 'B1': 3, 'B2': 4, 'C': 5, 'D': 6, 'CUS': 7 };
+        rows.sort(function (a, b) { return ((gMap[a.branch_grade] || 99) - (gMap[b.branch_grade] || 99)); });
+      } else if (sortBy === 'sales_desc') {
+        rows.sort(function (a, b) { return (op4mAvg(b) - op4mAvg(a)); });
+      } else if (sortBy === 'req_desc') {
+        rows.sort(function (a, b) { return ((opRecommend(b).actualReq || 0) - (opRecommend(a).actualReq || 0)); });
+      }
       var headers = ['Branch', 'Item', '91-120 Days', '61-90 Days', '31-60 Days', '01-30 Days',
         '4m Avg Sale', 'Avg Req.', 'Closing Stock', 'In-Transit', 'N Rating', 'Branch Grade',
         'Order %', 'Gross Req', 'Actual Req.', 'Actual Order', 'Branch Remarks', 'Appvd Order', 'Factory Remark', 'Batch'];
@@ -2013,10 +2036,29 @@ var AdminView = {
     var grade = document.getElementById('ad-planGradeFilter').value;
     var branchFilter = document.getElementById('ad-planBranchFilter').value;
     var needsOrder = document.getElementById('ad-planNeedsOrder').checked;
-    var rows = AdminView.planningRows;
+    var sortBy = document.getElementById('ad-planSort') ? document.getElementById('ad-planSort').value : 'default';
+
+    var rows = AdminView.planningRows.slice();
     if (branchFilter) rows = rows.filter(function (r) { return r.branch_code === branchFilter; });
     rows = filterPlanningRows(rows, term, grade);
     if (needsOrder) rows = rows.filter(function (r) { return opRecommend(r).actualReq > 0; });
+
+    // Apply Sorting
+    if (sortBy === 'closing_desc') {
+      rows.sort(function (a, b) { return (opNum(b.current_stock) - opNum(a.current_stock)); });
+    } else if (sortBy === 'closing_asc') {
+      rows.sort(function (a, b) { return (opNum(a.current_stock) - opNum(b.current_stock)); });
+    } else if (sortBy === 'n_rating_desc') {
+      rows.sort(function (a, b) { return ((opNum(b.n_rating) || 0) - (opNum(a.n_rating) || 0)); });
+    } else if (sortBy === 'branch_grade_asc') {
+      var gMap = { 'A1': 1, 'A2': 2, 'B1': 3, 'B2': 4, 'C': 5, 'D': 6, 'CUS': 7 };
+      rows.sort(function (a, b) { return ((gMap[a.branch_grade] || 99) - (gMap[b.branch_grade] || 99)); });
+    } else if (sortBy === 'sales_desc') {
+      rows.sort(function (a, b) { return (op4mAvg(b) - op4mAvg(a)); });
+    } else if (sortBy === 'req_desc') {
+      rows.sort(function (a, b) { return ((opRecommend(b).actualReq || 0) - (opRecommend(a).actualReq || 0)); });
+    }
+
     paintPlanning(document.getElementById('ad-planTableWrap'), rows, !branchFilter);
   },
 
