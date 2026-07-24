@@ -847,7 +847,7 @@
   .topbar, .sb { box-shadow: none !important; border-bottom: 1px solid var(--border) !important; }
   .sb { border-right: 1px solid var(--border) !important; }
 
-  th { background: var(--surface) !important; color: var(--sub) !important; border-bottom: 2px solid var(--border2) !important; }
+  th { background: var(--card) !important; color: var(--sub) !important; border-bottom: 2px solid var(--border2) !important; }
 
   /* Default stat bubble tint follows the new accent, not the old indigo. */
   .stat-ic-bubble { background: rgba(193,84,30,0.14); background: color-mix(in srgb, var(--accentH) 14%, transparent); }
@@ -1162,7 +1162,7 @@ html.theme-transition::view-transition-new(root) {
 
 /* 2-row sticky headers */
 .op-sheet thead tr:first-child th { position: sticky; top: 0; z-index: 10; }
-.op-sheet thead tr:nth-child(2) th { position: sticky; top: 27px; z-index: 9; }
+.op-sheet thead tr:nth-child(2) th { position: sticky; top: 39px; z-index: 9; }
 
 /* Top-left corner frozen header ("Item" column) */
 th.op-sticky {
