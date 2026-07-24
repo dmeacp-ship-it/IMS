@@ -74,6 +74,7 @@
       <div class="sb-nav-wrapper">
         <nav class="sb-nav" role="navigation" aria-label="Main menu">
           <div class="nsec">Menu</div>
+          <div class="ni" id="br-nav-summary" data-page="summary" data-tooltip="Branch Summary"><i class="ph ph-buildings"></i><span class="ni-txt">Branch Summary</span></div>
           <div class="ni active" data-page="ledger" data-tooltip="Stock Ledger"><i class="ph ph-stack"></i><span class="ni-txt">Stock Ledger</span></div>
           <div class="ni" data-page="transfers" data-tooltip="Incoming Transfers"><i class="ph ph-truck"></i><span class="ni-txt">Incoming Transfers</span><span class="ni-bd" id="br-nav-badge" style="display:none;">0</span></div>
           <div class="ni" data-page="audit" data-tooltip="Audit"><i class="ph ph-shield-check"></i><span class="ni-txt">Audit</span></div>
@@ -936,6 +937,19 @@
     </div>
 
     <div class="content" role="main">
+      <!-- BRANCH SUMMARY PAGE (BRANCH VIEW) -->
+      <div class="panel" id="br-summaryPanel" data-page="summary" style="display:none;">
+        <div class="panel-header">
+          <span><i class="ph ph-buildings"></i>All-Branch Stock Summary</span>
+          <div class="panel-header-tools">
+            <button class="btn btn-ghost btn-small" id="br-summaryRefreshBtn" title="Refresh Summary"><i class="ph ph-arrows-clockwise" id="br-summaryRefreshIcon"></i>Refresh</button>
+            <button class="btn btn-ghost btn-small" id="br-summaryExportBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export CSV</button>
+          </div>
+        </div>
+        <div id="br-summaryTableWrap" class="table-scroll">
+          <div class="skeleton" style="height:160px; margin:16px; border-radius:12px;"></div>
+        </div>
+      </div>
 
       <div class="panel" id="hod-ledgerPanel" data-page="ledger">
         <div class="panel-header">

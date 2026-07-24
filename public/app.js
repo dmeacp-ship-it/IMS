@@ -713,12 +713,29 @@ function wireSidebarNav() {
       item.addEventListener('click', function () {
         items.forEach(function (n) { n.classList.remove('active'); });
         item.classList.add('active');
-        showPage(item.getAttribute('data-page'));
+        var page = item.getAttribute('data-page');
+        showPage(page);
+        if (page === 'summary') {
+          if (typeof AdminView !== 'undefined' && AdminView.loadBranchSummary) AdminView.loadBranchSummary('ad-summaryTableWrap');
+          if (typeof BranchView !== 'undefined' && BranchView.loadBranchSummary) BranchView.loadBranchSummary('br-summaryTableWrap');
+        } else if (page === 'ledger') {
+          if (typeof AdminView !== 'undefined' && AdminView.loadLedger) AdminView.loadLedger();
+          if (typeof BranchView !== 'undefined' && BranchView.loadLedger) BranchView.loadLedger();
+        } else if (page === 'planning') {
+          if (typeof AdminView !== 'undefined' && AdminView.loadPlanning) AdminView.loadPlanning();
+        }
       });
     });
 
     var active = view.querySelector('.sb-nav .ni.active') || items[0];
-    if (active) showPage(active.getAttribute('data-page'));
+    if (active) {
+      var actPage = active.getAttribute('data-page');
+      showPage(actPage);
+      if (actPage === 'summary') {
+        if (typeof AdminView !== 'undefined' && AdminView.loadBranchSummary) AdminView.loadBranchSummary('ad-summaryTableWrap');
+        if (typeof BranchView !== 'undefined' && BranchView.loadBranchSummary) BranchView.loadBranchSummary('br-summaryTableWrap');
+      }
+    }
   });
 }
 
@@ -1457,37 +1474,38 @@ var AdminView = {
       });
     });
 
-    if (document.getElementById('ad-openSummaryBtn')) {
-      document.getElementById('ad-openSummaryBtn').addEventListener('click', function () {
-        var nav = document.getElementById('ad-nav-summary');
-        if (nav) nav.click();
-      });
-    }
-    if (document.getElementById('ad-summaryRefreshBtn')) {
-      document.getElementById('ad-summaryRefreshBtn').addEventListener('click', function () {
-        var icon = document.getElementById('ad-summaryRefreshIcon');
-        if (icon) icon.classList.add('spin');
-        AdminView.loadBranchSummary();
-        setTimeout(function () { if (icon) icon.classList.remove('spin'); }, 800);
-      });
-    }
-    if (document.getElementById('ad-summaryExportBtn')) {
-      document.getElementById('ad-summaryExportBtn').addEventListener('click', function () {
-        var rows = AdminView.branchSummaryRows || [];
-        var headers = ['Branch Name', 'Opening Date', 'Opening Stock', 'Inward Qty', 'Outward Qty', 'In-Transit Qty', 'Closing Stock'];
-        exportToCSV('all_branch_stock_summary.csv', headers, rows, function (r) {
-          return [
-            formatBranchShortName(r.branch_code, r.branch_code),
-            r.opening_as_of_date || '',
-            Math.round(r.opening_qty || 0),
-            Math.round(r.inward_qty || 0),
-            Math.round(r.outward_qty || 0),
-            Math.round(r.in_transit_qty || 0),
-            Math.round(r.closing_qty || 0)
-          ];
+    ['ad-summaryRefreshBtn', 'br-summaryRefreshBtn'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var icon = btn.querySelector('i');
+          if (icon) icon.classList.add('spin');
+          AdminView.loadBranchSummary('ad-summaryTableWrap');
+          AdminView.loadBranchSummary('br-summaryTableWrap');
+          setTimeout(function () { if (icon) icon.classList.remove('spin'); }, 800);
         });
-      });
-    }
+      }
+    });
+    ['ad-summaryExportBtn', 'br-summaryExportBtn'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var rows = AdminView.branchSummaryRows || [];
+          var headers = ['Branch Name', 'Opening Date', 'Opening Stock', 'Inward Qty', 'Outward Qty', 'In-Transit Qty', 'Closing Stock'];
+          exportToCSV('all_branch_stock_summary.csv', headers, rows, function (r) {
+            return [
+              formatBranchShortName(r.branch_code, r.branch_code),
+              r.opening_as_of_date || '',
+              Math.round(r.opening_qty || 0),
+              Math.round(r.inward_qty || 0),
+              Math.round(r.outward_qty || 0),
+              Math.round(r.in_transit_qty || 0),
+              Math.round(r.closing_qty || 0)
+            ];
+          });
+        });
+      }
+    });
 
     document.getElementById('ad-planSaveDraftBtn').addEventListener('click', function () {
       if (document.activeElement && document.activeElement.classList.contains('op-edit')) {
@@ -2126,23 +2144,25 @@ var AdminView = {
     if (overlay) overlay.style.display = 'none';
   },
 
-  loadBranchSummary: function () {
-    var wrap = document.getElementById('ad-summaryTableWrap');
+  loadBranchSummary: function (targetWrapId) {
+    var wrapId = targetWrapId || 'ad-summaryTableWrap';
+    var wrap = document.getElementById(wrapId);
     if (!wrap) return;
     wrap.innerHTML = skeletonBlock(140);
 
     apiGet('/api/admin/branch-summary')
       .then(function (rows) {
         AdminView.branchSummaryRows = rows;
-        AdminView.paintBranchSummary(rows);
+        AdminView.paintBranchSummary(rows, wrapId);
       })
       .catch(function (err) {
         wrap.innerHTML = emptyState('ph-warning-circle', 'Could not load branch summary', err.message || 'Try refreshing.');
       });
   },
 
-  paintBranchSummary: function (rows) {
-    var wrap = document.getElementById('ad-summaryTableWrap');
+  paintBranchSummary: function (rows, targetWrapId) {
+    var wrapId = targetWrapId || 'ad-summaryTableWrap';
+    var wrap = document.getElementById(wrapId);
     if (!wrap) return;
     if (!rows || rows.length === 0) {
       wrap.innerHTML = emptyState('ph-buildings', 'No branch data found', 'No stock records available.');
