@@ -1391,6 +1391,27 @@ td.op-sticky {
   font-size: 14px !important;
 }
 
+/* Sticky Total Row inside Stock Ledger Table Header */
+.ledger-total-row {
+  position: sticky !important;
+  top: 28px !important;
+  z-index: 25 !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+}
+
+.ledger-total-row td {
+  padding: 6px 10px !important;
+  font-weight: 800 !important;
+  color: var(--text) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 18%, var(--card)) !important;
+}
+
+body.light .ledger-total-row td {
+  background: #fff0eb !important;
+}
+
 body.light td.op-sticky {
   background: #ffffff !important;
 }

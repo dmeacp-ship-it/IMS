@@ -916,14 +916,47 @@ function ledgerRowHTML(r, showBranch) {
     + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : '')) + '"><strong>' + closing + '</strong></td>'
     + '</tr>';
 }
+function ledgerTotalRowHTML(rows, showBranch) {
+  if (!rows || !rows.length) return '';
+
+  var totOpen = 0, totInward = 0, totReturns = 0, totOutward = 0, totAdj = 0, totTransit = 0, totClosing = 0;
+
+  rows.forEach(function (r) {
+    totOpen += Math.round(r.opening_qty || 0);
+    totInward += Math.round(r.inward_qty || 0);
+    totReturns += Math.round(r.sales_return_qty || 0);
+    totOutward += Math.round(r.outward_qty || 0);
+    totAdj += Math.round(r.adjustment_qty || 0);
+    totTransit += Math.round(r.in_transit_qty || 0);
+    totClosing += Math.round(r.closing_qty || 0);
+  });
+
+  var adjText = totAdj === 0 ? '0' : ((totAdj > 0 ? '+' : '') + totAdj.toLocaleString());
+  var adjCls = totAdj > 0 ? ' td-positive' : (totAdj < 0 ? ' td-negative' : '');
+
+  return '<tr class="ledger-total-row">'
+    + (showBranch ? '<td class="mono"><strong>TOTAL</strong></td>' : '')
+    + '<td class="mono"><strong>TOTAL (' + rows.length.toLocaleString() + ' items)</strong></td>'
+    + '<td class="mono">—</td>'
+    + '<td class="mono">' + totOpen.toLocaleString() + '</td>'
+    + '<td class="mono">' + totInward.toLocaleString() + '</td>'
+    + '<td class="mono' + (totReturns > 0 ? ' td-positive' : '') + '">' + totReturns.toLocaleString() + '</td>'
+    + '<td class="mono">' + totOutward.toLocaleString() + '</td>'
+    + '<td class="mono' + adjCls + '">' + adjText + '</td>'
+    + '<td class="mono' + (totTransit > 0 ? ' td-positive' : '') + '">' + (totTransit > 0 ? ('<strong>' + totTransit.toLocaleString() + '</strong>') : totTransit.toLocaleString()) + '</td>'
+    + '<td class="mono' + (totClosing < 0 ? ' td-negative' : (totClosing > 0 ? ' td-positive' : '')) + '"><strong>' + totClosing.toLocaleString() + '</strong></td>'
+    + '</tr>';
+}
+
 // Progressive paint into a wrapper element (preferred for the live tables).
 function paintLedger(wrap, rows, opts) {
   opts = opts || {};
   if (!wrap) return;
   var showBranch = !!opts.showBranch;
-  var rowStrings = rows.map(function (r) { return ledgerRowHTML(r, showBranch); });
+  var headHTML = ledgerHeadHTML(showBranch) + ledgerTotalRowHTML(rows || [], showBranch);
+  var rowStrings = (rows || []).map(function (r) { return ledgerRowHTML(r, showBranch); });
   paintTable(wrap, '<table role="table" aria-label="Stock ledger">',
-    ledgerHeadHTML(showBranch), rowStrings, opts.emptyHTML);
+    headHTML, rowStrings, opts.emptyHTML);
 }
 // Kept: returns a full HTML string (used where a string, not a live paint, is
 // needed). Live table panels use paintLedger for non-blocking rendering.
@@ -933,8 +966,9 @@ function renderLedgerRows(rows, opts) {
   if (rows.length === 0) {
     return emptyState('ph-magnifying-glass', 'No matching rows', 'Try a different search or filter, or add opening stock first.');
   }
+  var headHTML = ledgerHeadHTML(showBranch) + ledgerTotalRowHTML(rows, showBranch);
   var body = rows.map(function (r) { return ledgerRowHTML(r, showBranch); }).join('');
-  return '<table role="table" aria-label="Stock ledger"><thead>' + ledgerHeadHTML(showBranch) + '</thead><tbody>' + body + '</tbody></table>';
+  return '<table role="table" aria-label="Stock ledger"><thead>' + headHTML + '</thead><tbody>' + body + '</tbody></table>';
 }
 
 function filterLedgerRows(rows, term, opts) {
