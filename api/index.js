@@ -204,6 +204,10 @@ app.get('/api/admin/ledger',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function () { return data.getAllItemLedger(); }, 's-maxage=10, stale-while-revalidate=60'));
 
+app.get('/api/admin/branch-summary',
+  auth.requireRole('SUPER_ADMIN', 'ADMIN'),
+  handle(function () { return data.getBranchSummary(); }, 's-maxage=10, stale-while-revalidate=60'));
+
 app.post('/api/admin/ledger/refresh',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
   handle(function (req) { return data.refreshLedgerSnapshot(req.session); }));

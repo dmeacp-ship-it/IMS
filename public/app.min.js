@@ -1456,6 +1456,44 @@ var AdminView = {
       });
     });
 
+    if (document.getElementById('ad-nav-summary')) {
+      document.getElementById('ad-nav-summary').addEventListener('click', AdminView.openBranchSummary);
+    }
+    if (document.getElementById('ad-openSummaryBtn')) {
+      document.getElementById('ad-openSummaryBtn').addEventListener('click', AdminView.openBranchSummary);
+    }
+    if (document.getElementById('ad-summaryCloseBtn')) {
+      document.getElementById('ad-summaryCloseBtn').addEventListener('click', AdminView.closeBranchSummary);
+    }
+    if (document.getElementById('ad-summaryCloseBtn2')) {
+      document.getElementById('ad-summaryCloseBtn2').addEventListener('click', AdminView.closeBranchSummary);
+    }
+    if (document.getElementById('ad-summaryRefreshBtn')) {
+      document.getElementById('ad-summaryRefreshBtn').addEventListener('click', function () {
+        var icon = document.getElementById('ad-summaryRefreshIcon');
+        if (icon) icon.classList.add('spin');
+        AdminView.loadBranchSummary();
+        setTimeout(function () { if (icon) icon.classList.remove('spin'); }, 800);
+      });
+    }
+    if (document.getElementById('ad-summaryExportBtn')) {
+      document.getElementById('ad-summaryExportBtn').addEventListener('click', function () {
+        var rows = AdminView.branchSummaryRows || [];
+        var headers = ['Branch Name', 'Opening Date', 'Opening Stock', 'Inward Qty', 'Outward Qty', 'In-Transit Qty', 'Closing Stock'];
+        exportToCSV('all_branch_stock_summary.csv', headers, rows, function (r) {
+          return [
+            formatBranchShortName(r.branch_code, r.branch_code),
+            r.opening_as_of_date || '',
+            Math.round(r.opening_qty || 0),
+            Math.round(r.inward_qty || 0),
+            Math.round(r.outward_qty || 0),
+            Math.round(r.in_transit_qty || 0),
+            Math.round(r.closing_qty || 0)
+          ];
+        });
+      });
+    }
+
     document.getElementById('ad-planSaveDraftBtn').addEventListener('click', function () {
       if (document.activeElement && document.activeElement.classList.contains('op-edit')) {
         document.activeElement.blur();
@@ -2079,6 +2117,102 @@ var AdminView = {
     }
 
     paintPlanning(document.getElementById('ad-planTableWrap'), rows, !branchFilter);
+  },
+
+  openBranchSummary: function () {
+    var overlay = document.getElementById('ad-branchSummaryOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    AdminView.loadBranchSummary();
+  },
+
+  closeBranchSummary: function () {
+    var overlay = document.getElementById('ad-branchSummaryOverlay');
+    if (overlay) overlay.style.display = 'none';
+  },
+
+  loadBranchSummary: function () {
+    var wrap = document.getElementById('ad-summaryTableWrap');
+    if (!wrap) return;
+    wrap.innerHTML = skeletonBlock(140);
+
+    apiGet('/api/admin/branch-summary')
+      .then(function (rows) {
+        AdminView.branchSummaryRows = rows;
+        AdminView.paintBranchSummary(rows);
+      })
+      .catch(function (err) {
+        wrap.innerHTML = emptyState('ph-warning-circle', 'Could not load branch summary', err.message || 'Try refreshing.');
+      });
+  },
+
+  paintBranchSummary: function (rows) {
+    var wrap = document.getElementById('ad-summaryTableWrap');
+    if (!wrap) return;
+    if (!rows || rows.length === 0) {
+      wrap.innerHTML = emptyState('ph-buildings', 'No branch data found', 'No stock records available.');
+      return;
+    }
+
+    function fmtShort(code, name) {
+      if (!code) return name || '';
+      var parts = code.split('-');
+      return parts.map(function (p) {
+        return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+      }).join('-');
+    }
+
+    var totOpen = 0, totInward = 0, totOutward = 0, totTransit = 0, totClosing = 0;
+
+    var html = '<table role="table" aria-label="Branch Stock Summary" class="op-sheet"><thead><tr>'
+      + '<th scope="col" style="background: var(--accent) !important; color: #fff !important;">Branch Name</th>'
+      + '<th scope="col" style="text-align:center;">Opening Date</th>'
+      + '<th scope="col" style="text-align:right;">Opening Stock</th>'
+      + '<th scope="col" style="text-align:right;">Inward Qty</th>'
+      + '<th scope="col" style="text-align:right;">Outward Qty</th>'
+      + '<th scope="col" style="text-align:right;">In-Transit Qty</th>'
+      + '<th scope="col" style="text-align:right;">Closing Stock</th>'
+      + '</tr></thead><tbody>';
+
+    rows.forEach(function (r) {
+      var openQty = Math.round(Number(r.opening_qty || 0));
+      var inward = Math.round(Number(r.inward_qty || 0));
+      var outward = Math.round(Number(r.outward_qty || 0));
+      var transit = Math.round(Number(r.in_transit_qty || 0));
+      var closing = Math.round(Number(r.closing_qty || 0));
+
+      totOpen += openQty;
+      totInward += inward;
+      totOutward += outward;
+      totTransit += transit;
+      totClosing += closing;
+
+      var bName = fmtShort(r.branch_code, r.branch_code);
+      var dateStr = r.opening_as_of_date ? r.opening_as_of_date : '—';
+
+      html += '<tr>'
+        + '<td><strong>' + esc(bName) + '</strong></td>'
+        + '<td style="text-align:center;" class="mono">' + esc(dateStr) + '</td>'
+        + '<td style="text-align:right;" class="mono">' + openQty.toLocaleString() + '</td>'
+        + '<td style="text-align:right;" class="mono">' + inward.toLocaleString() + '</td>'
+        + '<td style="text-align:right;" class="mono">' + outward.toLocaleString() + '</td>'
+        + '<td style="text-align:right;" class="mono' + (transit > 0 ? ' td-positive' : '') + '">' + transit.toLocaleString() + '</td>'
+        + '<td style="text-align:right;" class="mono' + (closing < 0 ? ' td-negative' : ' td-positive') + '"><strong>' + closing.toLocaleString() + '</strong></td>'
+        + '</tr>';
+    });
+
+    // GRAND TOTAL ROW AT THE BOTTOM
+    html += '</tbody><tfoot><tr class="summary-total-row" style="background: color-mix(in srgb, var(--accent) 18%, var(--card)) !important; font-weight: 800; font-size: 13px; border-top: 2px solid var(--accent);">'
+      + '<td><strong>TOTAL (All Outlets)</strong></td>'
+      + '<td style="text-align:center;" class="mono">All Outlets</td>'
+      + '<td style="text-align:right;" class="mono">' + totOpen.toLocaleString() + '</td>'
+      + '<td style="text-align:right;" class="mono">' + totInward.toLocaleString() + '</td>'
+      + '<td style="text-align:right;" class="mono">' + totOutward.toLocaleString() + '</td>'
+      + '<td style="text-align:right;" class="mono">' + totTransit.toLocaleString() + '</td>'
+      + '<td style="text-align:right;" class="mono" style="color: var(--accent);"><strong>' + totClosing.toLocaleString() + '</strong></td>'
+      + '</tr></tfoot></table>';
+
+    wrap.innerHTML = html;
   },
 
   loadConversions: function () {
