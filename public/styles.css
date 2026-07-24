@@ -656,7 +656,12 @@
     border-radius: 6px !important;
     max-width: 240px;
   }
-  .panel-header-tools .custom-select-container { width: 240px !important; margin-bottom: 0 !important; }
+  .panel-header-tools .custom-select-container { width: 175px !important; margin-bottom: 0 !important; }
+  #ad-planBranchFilter-custom-container, #ad-ledgerBranchFilter-custom-container { width: 190px !important; }
+  #ad-planSort-custom-container { width: 175px !important; }
+  #ad-planSearch, #ad-ledgerSearch { width: 150px !important; transition: width 0.2s ease; }
+  #ad-planSearch:focus, #ad-ledgerSearch:focus { width: 200px !important; }
+  #ad-planGradeFilter { width: 95px !important; }
   .panel-header-tools .custom-select-trigger { display: flex; align-items: center; justify-content: space-between; }
   .panel-header-tools .custom-select-trigger i { font-size: 14px !important; }
   .panel-header-tools .btn-icon-only { width: 30px !important; min-width: 30px !important; padding: 0 !important; justify-content: center !important; border-radius: 6px !important; }
@@ -1311,6 +1316,21 @@ td.op-sticky {
   min-width: 220px !important;
   box-shadow: 3px 0 8px rgba(0,0,0,0.08) !important;
   font-weight: 600;
+}
+
+/* Crisp Table Cell Alignments */
+.op-sheet td {
+  padding: 6px 8px !important;
+  vertical-align: middle !important;
+  font-size: 11.5px;
+}
+.op-sheet td.mono {
+  text-align: right !important;
+}
+.op-sheet td:nth-child(9),
+.op-sheet td:nth-child(10),
+.op-sheet td:nth-child(11) {
+  text-align: center !important;
 }
 
 body.light td.op-sticky {

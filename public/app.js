@@ -1969,6 +1969,17 @@ var AdminView = {
     var filterOptions = [{ value: '', text: 'All branches' }].concat(rawOptions);
     AdminView.customLedgerBranchFilter = makeCustomSelect('ad-ledgerBranchFilter', filterOptions, 'All branches');
     AdminView.customPlanBranchFilter = makeCustomSelect('ad-planBranchFilter', filterOptions, 'All branches');
+
+    var sortOpts = [
+      { value: 'default', text: 'Sort: Default (Family Sales)' },
+      { value: 'closing_desc', text: 'Closing Stock (Z ➔ A)' },
+      { value: 'closing_asc', text: 'Closing Stock (A ➔ Z)' },
+      { value: 'branch_grade_asc', text: 'Branch Grade (A1 ➔ D)' },
+      { value: 'n_rating_desc', text: 'National Rating (High ➔ Low)' },
+      { value: 'req_desc', text: 'Actual Req (High ➔ Low)' },
+      { value: 'sales_desc', text: '4M Sales Avg (High ➔ Low)' }
+    ];
+    AdminView.customPlanSort = makeCustomSelect('ad-planSort', sortOpts, 'Sort: Default (Family Sales)');
   },
 
   loadLedger: function () {
