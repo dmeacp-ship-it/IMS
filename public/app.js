@@ -1433,6 +1433,13 @@ var AdminView = {
       });
     });
 
+    document.getElementById('ad-planSaveDraftBtn').addEventListener('click', function () {
+      if (document.activeElement && document.activeElement.classList.contains('op-edit')) {
+        document.activeElement.blur();
+      }
+      toast('success', 'Order draft saved successfully for the plant!');
+    });
+
     AdminView.initAudit();
     AdminView.initTransfers();
 
