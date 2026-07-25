@@ -11,14 +11,16 @@
   <meta name="theme-color" content="#C1541E">
   <!-- Fonts + icons are self-hosted under /fonts (no third-party CDN): they load
        same-origin, so no preconnect / async-swap trick is needed. The icon font
-       is subset to just the ~43 glyphs the app uses (~6 KB vs the full set), and
-       the Google families are the latin/latin-ext woff2 subsets only. -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+       is subset to just the ~43 glyphs the app uses (~6 KB vs the full set).
+       fonts.css supplies IBM Plex Sans/Mono + Space Grotesk, which is what the
+       design tokens (--font-ui/--font-body/--font-mono) actually resolve to; it
+       was missing from the page, so the app fell back to system fonts while
+       still paying for an unused Google Fonts request. -->
+  <link rel="preload" href="/fonts/ibm-plex-sans-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts/fonts.css?v=1">
   <link rel="preload" href="/fonts/phosphor-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts/phosphor.css?v=1">
-  <link rel="stylesheet" href="/styles.min.css?v=8.1">
+  <link rel="stylesheet" href="/styles.min.css?v=8.2">
 </head>
 <body>
 
@@ -1072,6 +1074,6 @@
     </div>
   </div>
 
-  <script src="/app.min.js?v=10.2" defer></script>
+  <script src="/app.min.js?v=10.3" defer></script>
 </body>
 </html>
