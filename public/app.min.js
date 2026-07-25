@@ -2085,25 +2085,32 @@ var AdminView = {
     var rawOptions = AdminView.allBranches.map(function (b) {
       return { value: b.code, text: formatBranchShortName(b.code, b.name) };
     });
-    
-    var optionsHtml = AdminView.allBranches.map(function (b) {
-      return '<option value="' + b.code + '">' + formatBranchShortName(b.code, b.name) + '</option>';
+
+    // Factories produce stock that isn't modeled as inward, so they're excluded
+    // from the stock/planning views (see lib/data.js). Keep them out of these
+    // filters and default to "All branches" instead of pre-selecting the factory.
+    var nonFactory = AdminView.allBranches.filter(function (b) { return b.facility_type !== 'FACTORY'; });
+    var nonFactoryOptions = nonFactory.map(function (b) {
+      return { value: b.code, text: formatBranchShortName(b.code, b.name) };
+    });
+    var stockOptionsHtml = nonFactoryOptions.map(function (o) {
+      return '<option value="' + o.value + '">' + o.text + '</option>';
     }).join('');
     var ledgerSel = document.getElementById('ad-ledgerBranchFilter');
     var planSel = document.getElementById('ad-planBranchFilter');
     if (ledgerSel) {
-      ledgerSel.innerHTML = '<option value="">All branches</option>' + optionsHtml;
-      ledgerSel.value = 'AHMEDABAD-FACTORY';
+      ledgerSel.innerHTML = '<option value="">All branches</option>' + stockOptionsHtml;
+      ledgerSel.value = '';
     }
     if (planSel) {
-      planSel.innerHTML = '<option value="">All branches</option>' + optionsHtml;
-      planSel.value = 'AHMEDABAD-FACTORY';
+      planSel.innerHTML = '<option value="">All branches</option>' + stockOptionsHtml;
+      planSel.value = '';
     }
 
     AdminView.customOpenBranch = makeCustomSelect('ad-open-branch', rawOptions, 'Select branch...');
     AdminView.customConvBranch = makeCustomSelect('ad-conv-branch', rawOptions, 'Select branch...');
 
-    var filterOptions = [{ value: '', text: 'All branches' }].concat(rawOptions);
+    var filterOptions = [{ value: '', text: 'All branches' }].concat(nonFactoryOptions);
     AdminView.customLedgerBranchFilter = makeCustomSelect('ad-ledgerBranchFilter', filterOptions, 'All branches');
     AdminView.customPlanBranchFilter = makeCustomSelect('ad-planBranchFilter', filterOptions, 'All branches');
 
