@@ -954,28 +954,39 @@ function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
 }
 
 // Shared by Branch/Admin/HOD stock-ledger panels.
+// Column priority for narrow screens: .col-opt drops first (secondary movement
+// columns), then .col-opt2. Item / Batch / Inward / Outward / Closing always
+// stay. The same classes must be applied to the header, the data rows AND the
+// TOTAL row or the columns would misalign when they hide (see styles.css).
 function ledgerHeadHTML(showBranch) {
   return '<tr>' + (showBranch ? '<th scope="col">Branch</th>' : '')
-    + '<th scope="col">Item Name</th><th scope="col">Batch</th><th scope="col">Opening</th><th scope="col">Inward</th><th scope="col">Sales Returns</th><th scope="col">Outward</th><th scope="col">Adjustment</th><th scope="col">Incoming Transit</th><th scope="col">Closing</th></tr>';
+    + '<th scope="col">Item Name</th><th scope="col">Batch</th><th scope="col" class="col-opt2">Opening</th><th scope="col">Inward</th><th scope="col" class="col-opt">Sales Returns</th><th scope="col">Outward</th><th scope="col" class="col-opt">Adjustment</th><th scope="col" class="col-opt2">Incoming Transit</th><th scope="col">Closing</th></tr>';
 }
+// Most ledger cells are 0, so zeros are dimmed (.td-zero) to let the numbers
+// that actually moved carry the eye. Returns the class suffix for a value.
+function zeroCls(n) { return Number(n) === 0 ? ' td-zero' : ''; }
+
 function ledgerRowHTML(r, showBranch) {
   var closing = Math.round(r.closing_qty);
   var inTransit = Math.round(r.in_transit_qty || 0);
   var salesReturns = Math.round(r.sales_return_qty || 0);
   var adjustment = Math.round(r.adjustment_qty || 0);
+  var opening = Math.round(r.opening_qty);
+  var inward = Math.round(r.inward_qty);
+  var outward = Math.round(r.outward_qty);
   var adjText = adjustment === 0 ? '0' : ((adjustment > 0 ? '+' : '') + adjustment);
-  var adjCls = adjustment > 0 ? ' td-positive' : (adjustment < 0 ? ' td-negative' : '');
+  var adjCls = adjustment > 0 ? ' td-positive' : (adjustment < 0 ? ' td-negative' : ' td-zero');
   return '<tr>'
     + (showBranch ? '<td class="mono">' + esc(r.branch_code) + '</td>' : '')
     + '<td class="mono">' + esc(displayItemName(r.item_name)) + '</td>'
     + '<td class="mono">' + esc(r.batch || '—') + '</td>'
-    + '<td class="mono">' + Math.round(r.opening_qty) + '</td>'
-    + '<td class="mono">' + Math.round(r.inward_qty) + '</td>'
-    + '<td class="mono' + (salesReturns > 0 ? ' td-positive' : '') + '">' + salesReturns + '</td>'
-    + '<td class="mono">' + Math.round(r.outward_qty) + '</td>'
-    + '<td class="mono' + adjCls + '">' + adjText + '</td>'
-    + '<td class="mono' + (inTransit > 0 ? ' td-positive' : '') + '">' + (inTransit > 0 ? ('<strong>' + inTransit + '</strong>') : inTransit) + '</td>'
-    + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : '')) + '"><strong>' + closing + '</strong></td>'
+    + '<td class="mono col-opt2' + zeroCls(opening) + '">' + opening + '</td>'
+    + '<td class="mono' + zeroCls(inward) + '">' + inward + '</td>'
+    + '<td class="mono col-opt' + (salesReturns > 0 ? ' td-positive' : ' td-zero') + '">' + salesReturns + '</td>'
+    + '<td class="mono' + zeroCls(outward) + '">' + outward + '</td>'
+    + '<td class="mono col-opt' + adjCls + '">' + adjText + '</td>'
+    + '<td class="mono col-opt2' + (inTransit > 0 ? ' td-positive' : ' td-zero') + '">' + (inTransit > 0 ? ('<strong>' + inTransit + '</strong>') : inTransit) + '</td>'
+    + '<td class="mono' + (closing < 0 ? ' td-negative' : (closing > 0 ? ' td-positive' : ' td-zero')) + '"><strong>' + closing + '</strong></td>'
     + '</tr>';
 }
 function ledgerTotalRowHTML(rows, showBranch) {
@@ -1000,12 +1011,12 @@ function ledgerTotalRowHTML(rows, showBranch) {
     + (showBranch ? '<td class="mono"><strong>TOTAL</strong></td>' : '')
     + '<td class="mono"><strong>TOTAL (' + rows.length.toLocaleString() + ' items)</strong></td>'
     + '<td class="mono">—</td>'
-    + '<td class="mono">' + totOpen.toLocaleString() + '</td>'
+    + '<td class="mono col-opt2">' + totOpen.toLocaleString() + '</td>'
     + '<td class="mono">' + totInward.toLocaleString() + '</td>'
-    + '<td class="mono' + (totReturns > 0 ? ' td-positive' : '') + '">' + totReturns.toLocaleString() + '</td>'
+    + '<td class="mono col-opt' + (totReturns > 0 ? ' td-positive' : '') + '">' + totReturns.toLocaleString() + '</td>'
     + '<td class="mono">' + totOutward.toLocaleString() + '</td>'
-    + '<td class="mono' + adjCls + '">' + adjText + '</td>'
-    + '<td class="mono' + (totTransit > 0 ? ' td-positive' : '') + '">' + (totTransit > 0 ? ('<strong>' + totTransit.toLocaleString() + '</strong>') : totTransit.toLocaleString()) + '</td>'
+    + '<td class="mono col-opt' + adjCls + '">' + adjText + '</td>'
+    + '<td class="mono col-opt2' + (totTransit > 0 ? ' td-positive' : '') + '">' + (totTransit > 0 ? ('<strong>' + totTransit.toLocaleString() + '</strong>') : totTransit.toLocaleString()) + '</td>'
     + '<td class="mono' + (totClosing < 0 ? ' td-negative' : (totClosing > 0 ? ' td-positive' : '')) + '"><strong>' + totClosing.toLocaleString() + '</strong></td>'
     + '</tr>';
 }
@@ -3671,26 +3682,6 @@ async function boot() {
         return; // Don't setup realtime if not logged in
     }
 
-    // Connect to SSE Realtime Updates
-    setupRealtime();
-  }
-
-  function setupRealtime() {
-    var source = new EventSource('/api/stream');
-    source.onmessage = function (event) {
-      try {
-        var data = JSON.parse(event.data);
-        // We debounce the refresh slightly in case of bulk changes
-        clearTimeout(window._rtTimer);
-        window._rtTimer = setTimeout(function() {
-          if (SESSION.role === 'BRANCH') BranchView.load();
-          else if (SESSION.role === 'ADMIN' || SESSION.role === 'SUPER_ADMIN') AdminView.loadAll();
-          else if (SESSION.role === 'HOD') HodView.load();
-        }, 500);
-      } catch (e) {
-        // ignore JSON parse errors
-      }
-    };
   }
 
   var cached = null;

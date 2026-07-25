@@ -39,59 +39,23 @@ app.use(function (req, res, next) {
   // everything but the Supabase API endpoint is locked to same-origin.
   // script-src is 'self' only (no 'unsafe-inline') — all JS is in external files
   // and inline on* handlers were removed, so injected scripts can't execute.
-  // style-src keeps 'unsafe-inline' (the UI uses inline style attributes) and the
-  // Google Fonts origins are still needed for the Inter/Outfit <link>s in index.html.
-  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ${supabaseUrl};`);
+  // Fonts are now fully self-hosted, so the Google Fonts origins are gone too:
+  // style-src/font-src are same-origin only ('unsafe-inline' stays for style-src
+  // because the UI uses inline style attributes).
+  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${supabaseUrl};`);
   next();
 });
 
-/* ------------------------------- SSE REALTIME ---------------------------- */
-const clients = new Set();
-app.get('/api/stream', function (req, res) {
-  // We use standard SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.flushHeaders();
-  
-  // Only authenticated clients should be here (though we could enforce via auth.getSession)
-  const session = auth.getSession(req);
-  if (!session) {
-    res.status(401).end();
-    return;
-  }
-  
-  const client = { id: Date.now(), res, role: session.role, branchCode: session.branchCode };
-  clients.add(client);
-  
-  req.on('close', () => {
-    clients.delete(client);
-  });
-});
-
-// Broadcast events from Supabase to SSE clients
-function broadcastRealtimeEvent(payload) {
-  const dataString = JSON.stringify(payload);
-  for (const client of clients) {
-    // Optionally filter by branchCode if applicable, but for now broadcast to all
-    client.res.write(`data: ${dataString}\n\n`);
-  }
-}
-
-// Subscribe to Supabase Realtime (assuming lib/supabase exports the client)
-const { supabase } = require('../lib/supabase');
-if (supabase) {
-  supabase
-    .channel('public-tables')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'branch_transfers' }, (payload) => {
-      broadcastRealtimeEvent({ type: 'transfer_update', payload });
-    })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'item_transactions' }, (payload) => {
-      broadcastRealtimeEvent({ type: 'transaction_update', payload });
-    })
-    .subscribe();
-}
-
+/* NOTE: an SSE endpoint (/api/stream) and a Supabase Realtime subscription used
+   to live here. Both were dead code and have been removed:
+     - the channel subscribed to tables that do not exist (branch_transfers,
+       item_transactions — the real table is sales_transactions), so it never
+       emitted a single event;
+     - the client's EventSource therefore only ever held an idle connection open;
+     - and the module-level `clients` Set cannot work on serverless anyway, since
+       each invocation gets its own isolated instance.
+   Reintroducing live updates needs a different transport (e.g. Supabase Realtime
+   straight from the browser), not this. */
 
 /* Wrap an async (req) => result handler into an Express handler with uniform
    error → JSON mapping. */

@@ -53,6 +53,16 @@
   @media (max-width: 768px) {
     :root { --content-pad: 14px; --section-gap: 18px; }
   }
+  /* ── Column priority ──────────────────────────────────────────────────────
+     Wide tables (the ledger is 10 columns) stay readable on small screens by
+     dropping secondary columns instead of forcing a horizontal scroll. .col-opt
+     goes first, then .col-opt2; Item / Batch / Inward / Outward / Closing always
+     remain. Applied to <th>, <td> and the TOTAL row so alignment is preserved.
+     Printing always shows every column. */
+  @media (max-width: 1100px) { .col-opt  { display: none !important; } }
+  @media (max-width: 860px)  { .col-opt2 { display: none !important; } }
+  @media print { .col-opt, .col-opt2 { display: table-cell !important; } }
+
   /* Density toggle: show its "on" (compact) state. */
   .density-toggle[aria-pressed="true"] {
     background: var(--role-accent-subtle, rgba(59,130,246,0.12));
@@ -405,6 +415,10 @@
   body:not(.light) tbody tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
   .td-negative { background: rgba(162,59,38,0.08) !important; color: var(--red); font-weight: 600; }
   .td-positive { color: var(--green); font-weight: 600; }
+  /* The ledger is mostly zeros — mute them so real movement reads first.
+     Scoped to tbody so the TOTAL row keeps its full weight. */
+  tbody .td-zero { color: var(--muted); font-weight: 400; }
+  tbody .td-zero strong { font-weight: 400; }
   /* ── Ultra-Fast Progressive Rendering Animation ── */
   tbody tr { animation: rowFadeIn 0.2s ease-out both; }
   @keyframes rowFadeIn { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
