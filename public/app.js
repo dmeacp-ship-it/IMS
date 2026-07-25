@@ -835,6 +835,24 @@ function initDensity() {
   });
 }
 
+/* --------------------------- chunked sheet sync --------------------------- */
+// The Google Sheet (~70k rows) takes far longer to import than one serverless
+// invocation allows, so the server processes a slice per request and returns a
+// resume point ({ phase, nextOffset, stats }). This loops until done, invoking
+// onProgress(stats, phase) between slices. Resolves with the final summary.
+function syncSheetChunked(mode, onProgress) {
+  function step(state) {
+    return apiPost('/api/admin/sync', {
+      mode: mode, phase: state.phase, offset: state.offset, stats: state.stats
+    }).then(function (res) {
+      if (res && res.done) return res;
+      if (onProgress) onProgress((res && res.stats) || {}, res && res.phase);
+      return step({ phase: res.phase, offset: res.nextOffset, stats: res.stats });
+    });
+  }
+  return step({ phase: 'transactions', offset: 0, stats: {} });
+}
+
 // Fills the avatar initials + display name in a shell's sidebar footer.
 function fillUserChrome(prefix) {
   if (!SESSION) return;
@@ -1779,15 +1797,17 @@ var AdminView = {
       btn.disabled = true;
       btn.innerHTML = '<i class="ph ph-spinner spin"></i>Syncing…';
       status.textContent = 'Contacting Google Sheet...';
-      apiPost('/api/admin/sync', { mode: 'HARD_RESET' })
+
+      syncSheetChunked('HARD_RESET', function (stats, phase) {
+        var soFar = (stats.transactions || 0).toLocaleString();
+        status.textContent = phase === 'returns'
+          ? 'Imported ' + soFar + ' rows — now syncing sales returns…'
+          : 'Imported ' + soFar + ' rows…';
+      })
         .then(function (res) {
-          if (res.success) {
-            toast('success', 'Synced ' + res.synced + ' rows from Google Sheet!');
-            status.innerHTML = '<span style="color:var(--green)">Last Sync: Successful (' + res.synced + ' rows)</span>';
-            AdminView.loadAll();
-          } else {
-            status.innerHTML = '<span style="color:var(--danger)">Sync failed: ' + esc(res.error) + '</span>';
-          }
+          toast('success', 'Synced ' + res.synced + ' rows from Google Sheet!');
+          status.innerHTML = '<span style="color:var(--green)">Last Sync: Successful (' + res.synced + ' rows)</span>';
+          AdminView.loadAll();
         })
         .catch(function (err) {
           status.innerHTML = '<span style="color:var(--danger)">Sync failed: ' + esc(err.message) + '</span>';
@@ -1857,7 +1877,7 @@ var AdminView = {
         headerSyncBtn.style.opacity = '0.6';
         if (icon) icon.classList.add('spin');
         
-        apiPost('/api/admin/sync', { mode: 'HARD_RESET' })
+        syncSheetChunked('HARD_RESET')
           .then(function (res) {
             toast('success', 'Sync completed successfully! Synced ' + (res.synced || 0) + ' rows.');
             AdminView.loadAll();

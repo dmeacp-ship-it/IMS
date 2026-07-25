@@ -276,7 +276,17 @@ app.post('/api/admin/settings',
 
 app.post('/api/admin/sync',
   auth.requireRole('SUPER_ADMIN', 'ADMIN'),
-  handle(function (req) { return data.syncGoogleSheet((req.session ? req.session.username : 'SYSTEM'), req.body.mode); }));
+  handle(function (req) {
+    // Resumable: the client loops, passing back the phase/offset/stats from the
+    // previous response until `done` is true. A full sheet is far too big for
+    // one function invocation (see SYNC_CHUNK in lib/data.js).
+    const b = req.body || {};
+    return data.syncGoogleSheet(
+      (req.session ? req.session.username : 'SYSTEM'),
+      b.mode,
+      { phase: b.phase, offset: b.offset, stats: b.stats }
+    );
+  }));
 
 app.get('/api/cron/sync', async function (req, res) {
   try {
@@ -293,7 +303,9 @@ app.get('/api/cron/sync', async function (req, res) {
     if (authHeader !== 'Bearer ' + secret) {
       return res.status(401).json({ error: 'Unauthorized.' });
     }
-    const result = await data.syncGoogleSheet('SYSTEM (Auto Sync)');
+    // No client to drive the loop here, so run slices back-to-back and stop
+    // short of the function limit rather than being killed mid-write.
+    const result = await data.syncGoogleSheetAll('SYSTEM (Auto Sync)', 'APPEND', 45000);
     res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
