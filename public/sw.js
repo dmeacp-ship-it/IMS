@@ -5,7 +5,7 @@
 // new build to be fetched — otherwise this cache-first SW keeps serving old
 // assets even after a deploy. (Precache the files index.html actually loads —
 // the *.min.* copies — not the unused source files.)
-const CACHE_NAME = 'virgo-ims-v4';
+const CACHE_NAME = 'virgo-ims-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

@@ -244,6 +244,13 @@ app.post('/api/admin/sync',
     // Resumable: the client loops, passing back the phase/offset/stats from the
     // previous response until `done` is true. A full sheet is far too big for
     // one function invocation (see SYNC_CHUNK in lib/data.js).
+    //
+    // Note this deliberately never forwards `allowDestructive`, so a sync from
+    // the browser can only ever upsert. An older cached client still sends
+    // mode:'HARD_RESET'; without that flag the wipe is skipped and it behaves as
+    // a plain upsert, which is what we want — a half-finished chunked wipe would
+    // otherwise truncate the table, and re-inserting rows destroys the RECEIVED
+    // transfer status. Use the "Clear All Data" danger zone for a real reset.
     const b = req.body || {};
     return data.syncGoogleSheet(
       (req.session ? req.session.username : 'SYSTEM'),
