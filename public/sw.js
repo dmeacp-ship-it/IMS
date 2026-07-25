@@ -1,11 +1,16 @@
 'use strict';
 
-const CACHE_NAME = 'virgo-ims-v1';
+// Bump this on every asset release. The activate handler deletes any cache
+// whose name != CACHE_NAME, so bumping it purges stale CSS/JS and forces the
+// new build to be fetched — otherwise this cache-first SW keeps serving old
+// assets even after a deploy. (Precache the files index.html actually loads —
+// the *.min.* copies — not the unused source files.)
+const CACHE_NAME = 'virgo-ims-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
+  '/styles.min.css',
+  '/app.min.js',
   '/favicon.svg'
 ];
 

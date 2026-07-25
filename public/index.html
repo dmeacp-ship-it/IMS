@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preload" href="/fonts/phosphor-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts/phosphor.css?v=1">
-  <link rel="stylesheet" href="/styles.min.css?v=8.0">
+  <link rel="stylesheet" href="/styles.min.css?v=8.1">
 </head>
 <body>
 
@@ -104,6 +104,7 @@
         <span id="br-branchLabel">—</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small density-toggle" title="Toggle compact density" aria-pressed="false"><i class="ph ph-list-bullets"></i></button>
         <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
         <span class="role-pill">BRANCH</span>
       </div>
@@ -231,7 +232,7 @@
                   <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
                   <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
                   <input type="file" id="br-audit-fileInput" accept=".csv" style="display: none;">
-                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('br-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <button class="btn btn-ghost btn-small" id="br-audit-chooseBtn"><i class="ph ph-file"></i>Choose File</button>
                   <div id="br-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
                 </div>
                 
@@ -377,6 +378,7 @@
       <div class="tb-r">
         <button class="btn btn-primary btn-small" id="ad-openSummaryBtn" title="All-Branch Stock Summary"><i class="ph ph-buildings"></i>Branch Summary</button>
         <button class="btn btn-ghost btn-small" id="ad-headerSyncBtn" title="Sync Sheet Data"><i class="ph ph-arrows-clockwise" id="ad-headerSyncIcon"></i></button>
+        <button class="btn btn-ghost btn-small density-toggle" title="Toggle compact density" aria-pressed="false"><i class="ph ph-list-bullets"></i></button>
         <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
       </div>
     </div>
@@ -426,7 +428,7 @@
           <span><i class="ph ph-stack"></i>Stock ledger — all branches</span>
           <div class="panel-header-tools">
             <input type="text" id="ad-ledgerSearch" placeholder="Search item name, batch, or branch…">
-            <select id="ad-ledgerBranchFilter"><option value="">All branches</option><option value="AHMEDABAD-FACTORY" selected>Ahmedabad- ACP Industries Depot</option></select>
+            <select id="ad-ledgerBranchFilter"><option value="">All branches</option></select>
             <button class="btn btn-ghost btn-small" id="ad-refreshLedgerBtn" title="Refresh ledger snapshot now"><i class="ph ph-arrows-clockwise" id="ad-refreshLedgerIcon"></i>Refresh</button>
             <button class="btn btn-ghost btn-small" id="ad-exportLedgerBtn" title="Export CSV"><i class="ph ph-download-simple"></i>Export</button>
             <button class="btn btn-ghost btn-small" id="ad-openOpeningBtn" title="Opening Stock"><i class="ph ph-flag"></i>Opening</button>
@@ -465,7 +467,7 @@
           </span>
           <div class="panel-header-tools">
             <input type="text" id="ad-planSearch" placeholder="Search item, size, or branch…">
-            <select id="ad-planBranchFilter"><option value="">All branches</option><option value="AHMEDABAD-FACTORY" selected>Ahmedabad- ACP Industries Depot</option></select>
+            <select id="ad-planBranchFilter"><option value="">All branches</option></select>
             <select id="ad-planGradeFilter">
               <option value="">All grades</option>
               <option value="A1">A1</option><option value="A2">A2</option>
@@ -573,7 +575,7 @@
                   <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--muted);"></i>
                   <div style="font-size: 12px; color: var(--sub);">Select a reconciliation CSV file to upload</div>
                   <input type="file" id="ad-audit-fileInput" accept=".csv" style="display: none;">
-                  <button class="btn btn-ghost btn-small" onclick="document.getElementById('ad-audit-fileInput').click()"><i class="ph ph-file"></i>Choose File</button>
+                  <button class="btn btn-ghost btn-small" id="ad-audit-chooseBtn"><i class="ph ph-file"></i>Choose File</button>
                   <div id="ad-audit-fileName" style="font-size: 11px; color: var(--accent); font-weight: 500;">No file chosen</div>
                 </div>
                 
@@ -931,6 +933,7 @@
         <span>Assigned branches</span>
       </div>
       <div class="tb-r">
+        <button class="btn btn-ghost btn-small density-toggle" title="Toggle compact density" aria-pressed="false"><i class="ph ph-list-bullets"></i></button>
         <button class="btn btn-ghost btn-small theme-toggle" title="Toggle theme"><i class="ph ph-moon"></i></button>
         <span class="role-pill">HOD</span>
       </div>
@@ -1069,6 +1072,6 @@
     </div>
   </div>
 
-  <script src="/app.min.js?v=9.8" defer></script>
+  <script src="/app.min.js?v=10.1" defer></script>
 </body>
 </html>

@@ -8,3 +8,5 @@ npm-debug.log*
 # Local editor/agent tooling and one-off debug scripts
 .claude/
 check-sync-logs.js
+scratch/
+run_sync.js

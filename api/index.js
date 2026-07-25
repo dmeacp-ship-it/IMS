@@ -12,7 +12,21 @@ const data = require('../lib/data');
 
 const app = express();
 app.use(compression());
-app.use(express.json({ limit: '25mb' })); // bulk transfer/opening-stock uploads can be large
+
+// Only the CSV bulk-upload endpoints need a large body; everything else (login,
+// single-record writes) is capped small so those routes aren't a memory/DoS
+// surface. express.json can't vary its limit per-path on its own, so we pick the
+// parser by path here.
+const smallJson = express.json({ limit: '1mb' });
+const bigJson = express.json({ limit: '25mb' });
+const BIG_BODY_PATHS = new Set([
+  '/api/admin/transfers/bulk-status',
+  '/api/admin/opening-stock/bulk',
+  '/api/reconciliations/bulk'
+]);
+app.use(function (req, res, next) {
+  return (BIG_BODY_PATHS.has(req.path) ? bigJson : smallJson)(req, res, next);
+});
 app.use(cookieParser());
 
 app.use(function (req, res, next) {
@@ -23,7 +37,11 @@ app.use(function (req, res, next) {
   const supabaseUrl = process.env.SUPABASE_URL || '';
   // Fonts + icons are now self-hosted, so no third-party origins are needed —
   // everything but the Supabase API endpoint is locked to same-origin.
-  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ${supabaseUrl};`);
+  // script-src is 'self' only (no 'unsafe-inline') — all JS is in external files
+  // and inline on* handlers were removed, so injected scripts can't execute.
+  // style-src keeps 'unsafe-inline' (the UI uses inline style attributes) and the
+  // Google Fonts origins are still needed for the Inter/Outfit <link>s in index.html.
+  res.setHeader('Content-Security-Policy', `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ${supabaseUrl};`);
   next();
 });
 
@@ -91,6 +109,12 @@ function handle(fn, cacheHeader) {
       if (msg.indexOf('Concurrency Lock:') !== -1) {
         status = 400;
         msg = msg.replace(/^.*?Concurrency Lock:/, 'Concurrency Lock:');
+      }
+      // 4xx are intentional, user-facing messages (from httpError). 5xx may carry
+      // internal/DB details, so log them server-side and return a generic message.
+      if (status >= 500) {
+        console.error('Error on ' + req.method + ' ' + (req.originalUrl || req.url) + ':', e);
+        msg = 'Something went wrong on our end. Please try again.';
       }
       res.status(status).json({ error: msg });
     }
