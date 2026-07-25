@@ -1809,7 +1809,7 @@ var AdminView = {
       btn.innerHTML = '<i class="ph ph-spinner spin"></i>Syncing…';
       status.textContent = 'Contacting Google Sheet...';
 
-      syncSheetChunked('HARD_RESET', function (stats, phase) {
+      syncSheetChunked('APPEND', function (stats, phase) {
         var soFar = (stats.transactions || 0).toLocaleString();
         status.textContent = phase === 'returns'
           ? 'Imported ' + soFar + ' rows — now syncing sales returns…'
@@ -1888,7 +1888,7 @@ var AdminView = {
         headerSyncBtn.style.opacity = '0.6';
         if (icon) icon.classList.add('spin');
         
-        syncSheetChunked('HARD_RESET')
+        syncSheetChunked('APPEND')
           .then(function (res) {
             toast('success', 'Sync completed successfully! Synced ' + (res.synced || 0) + ' rows.');
             AdminView.loadAll();
