@@ -803,6 +803,38 @@ function initTheme() {
   });
 }
 
+/* ------------------------------- density --------------------------------- */
+// Comfortable (default) vs Compact. Compact tightens spacing/row height for
+// data-heavy work (Stock Ledger, Order Planning). Persists in localStorage and
+// mirrors the theme-toggle pattern; the actual spacing lives in CSS tokens on
+// body.compact (see styles.css "Density system").
+function applyDensity(mode) {
+  var compact = mode === 'compact';
+  document.body.classList.toggle('compact', compact);
+  document.querySelectorAll('.density-toggle').forEach(function (btn) {
+    btn.setAttribute('aria-pressed', compact ? 'true' : 'false');
+    btn.title = compact ? 'Switch to comfortable spacing' : 'Switch to compact spacing';
+  });
+  // Row height changed, so any virtual-scrolled table needs to recompute its
+  // spacers. Nudge a scroll event; renderViewport re-renders when --row-h moves.
+  document.querySelectorAll('.tbl-wrap, .table-scroll').forEach(function (w) {
+    w.dispatchEvent(new Event('scroll'));
+  });
+}
+
+function initDensity() {
+  var mode = 'comfortable';
+  try { mode = localStorage.getItem('ims_density') || 'comfortable'; } catch (e) { /* ignore */ }
+  applyDensity(mode);
+  document.querySelectorAll('.density-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var next = document.body.classList.contains('compact') ? 'comfortable' : 'compact';
+      applyDensity(next);
+      try { localStorage.setItem('ims_density', next); } catch (e) { /* ignore */ }
+    });
+  });
+}
+
 // Fills the avatar initials + display name in a shell's sidebar footer.
 function fillUserChrome(prefix) {
   if (!SESSION) return;
@@ -838,8 +870,12 @@ function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
     return;
   }
 
-  // Use a fixed row height estimation for virtual scrolling (38px covers our dense padding)
-  var ROW_HEIGHT = 38;
+  // Row height for virtual-scroll math, read live from the --row-h density token
+  // so Compact/Comfortable stay in sync (see styles.css "Density system").
+  function rowHeight() {
+    var v = parseInt(getComputedStyle(document.body).getPropertyValue('--row-h'), 10);
+    return v > 0 ? v : 38;
+  }
   var totalRows = rowStrings.length;
   var OVERSCAN = 15;
   
@@ -852,24 +888,28 @@ function paintTable(wrap, tableOpen, headHTML, rowStrings, emptyHTML) {
 
   var lastStart = -1;
   var lastEnd = -1;
+  var lastRowH = -1;
   var rafId = null;
 
   function renderViewport() {
     if (!wrap.isConnected) return;
+    var ROW_HEIGHT = rowHeight();
     var viewportHeight = wrap.clientHeight || 800;
     var scrollTop = wrap.scrollTop;
-    
+
     var startIdx = Math.floor(scrollTop / ROW_HEIGHT);
     startIdx = Math.max(0, startIdx - OVERSCAN);
-    
+
     var visibleRowsCount = Math.ceil(viewportHeight / ROW_HEIGHT);
     var endIdx = startIdx + visibleRowsCount + (OVERSCAN * 2);
     endIdx = Math.min(totalRows, endIdx);
-    
-    if (startIdx === lastStart && endIdx === lastEnd) return;
+
+    // Re-render if the viewport window OR the density (row height) changed.
+    if (startIdx === lastStart && endIdx === lastEnd && ROW_HEIGHT === lastRowH) return;
     lastStart = startIdx;
     lastEnd = endIdx;
-    
+    lastRowH = ROW_HEIGHT;
+
     var topHeight = startIdx * ROW_HEIGHT;
     var bottomHeight = Math.max(0, (totalRows - endIdx) * ROW_HEIGHT);
     
@@ -3532,6 +3572,7 @@ BranchView.loadAudit = function () {
 /* ------------------------------- BOOT ----------------------------------- */
 async function boot() {
   initTheme();
+  initDensity();
   wireLogout();
   wireSidebarToggles();
   wireSidebarNav();

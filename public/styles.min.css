@@ -24,6 +24,42 @@
     color-scheme: dark;
   }
 
+  /* ── Density system (Comfortable default / Compact toggle) ──────────────────
+     Space-management tokens consumed by .content, tables, panels and the KPI
+     row. body.compact tightens them for data-heavy work (Stock Ledger, Order
+     Planning). The 768px override also FIXES the old mobile-padding bug, where a
+     later .content rule clobbered the media query and left 48px padding on
+     phones — now the padding follows this token everywhere. */
+  :root {
+    --content-pad: 26px;
+    --section-gap: 30px;
+    --cell-py: 8px;
+    --cell-px: 14px;
+    --cell-font: 13px;
+    --head-py: 9px;
+    --tbl-reserve: 210px;
+    --row-h: 36px;   /* est. rendered row height — the virtual scroller reads this */
+  }
+  body.compact {
+    --content-pad: 16px;
+    --section-gap: 16px;
+    --cell-py: 5px;
+    --cell-px: 11px;
+    --cell-font: 12.5px;
+    --head-py: 7px;
+    --tbl-reserve: 168px;
+    --row-h: 30px;
+  }
+  @media (max-width: 768px) {
+    :root { --content-pad: 14px; --section-gap: 18px; }
+  }
+  /* Density toggle: show its "on" (compact) state. */
+  .density-toggle[aria-pressed="true"] {
+    background: var(--role-accent-subtle, rgba(59,130,246,0.12));
+    border-color: var(--role-accent, var(--accent));
+    color: var(--role-accent, var(--accentH));
+  }
+
 
   body.role-admin {
     --role-accent: var(--accent);
@@ -356,7 +392,7 @@
   .tsearch:focus { border-color: var(--accent) !important; width: 260px !important; box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important; }
   .filter-sel:hover, .tsearch:hover { border-color: var(--sub) !important; }
   .filter-sel { background: var(--bg) !important; border: 1px solid var(--border2) !important; color: var(--text) !important; padding: 0 28px 0 12px !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 500; outline: none; cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" stroke="%23a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l3 3 3-3"/></svg>') !important; background-repeat: no-repeat !important; background-position: right 10px center !important; height: 32px !important; width: auto !important; min-width: 140px; touch-action: manipulation; }
-  .tbl-wrap { overflow-x: auto; max-height: calc(100vh - 250px); }
+  .tbl-wrap { overflow-x: auto; max-height: calc(100vh - var(--tbl-reserve)); }
   table { width: 100%; border-collapse: collapse; }
 
   th { padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #ffffff; background: var(--accent); border-bottom: 1px solid var(--border); white-space: nowrap; position: sticky; top: 0; z-index: 5; box-shadow: 0 1px 0 var(--border); print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -434,6 +470,10 @@
     .modal-foot .btn { justify-content: center; }
     .tbl-filters { flex-direction: column; align-items: stretch; width: 100%; margin-top: 10px; }
     .sw, .tsearch, .filter-sel { width: 100% !important; min-width: 100%; }
+    /* KPI cards wrap to a grid on phones instead of scrolling off-screen. */
+    .stats { flex-wrap: wrap; overflow-x: visible; }
+    .stats .stat { flex: 1 1 calc(50% - 12px); min-width: calc(50% - 12px); }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
   }
 
   /* ── Print styles ── */
@@ -607,7 +647,7 @@
     padding: 3px 8px; border-radius: 100px; background: var(--surface); color: var(--accentH); border: 1px solid var(--border);
   }
 
-  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s-24); margin-bottom: var(--s-64); }
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s-16); margin-bottom: var(--section-gap); }
   .stat-card {
     background: var(--card); border-radius: 12px; padding: var(--s-16) var(--s-24);
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 16px rgba(0,0,0,0.03);
@@ -759,19 +799,19 @@
      UI polish pass — spacing, stat cards, modals, forms, motion
   ═══════════════════════════════════════════════════════════ */
 
-  .content { width: 100%; padding: var(--s-48); }
+  .content { width: 100%; padding: var(--content-pad); }
 
   /* Sticky (frozen) table headers — the table body scrolls inside this box
      while the column headers, panel header and search row stay put. */
-  .table-scroll { overflow: auto; max-height: calc(100vh - 210px); }
+  .table-scroll { overflow: auto; max-height: calc(100vh - var(--tbl-reserve)); }
   .table-scroll table { border-collapse: separate; border-spacing: 0; }
   th { position: sticky; top: 0; z-index: 5; }
 
-  /* Roomier tables + typography */
-  td { padding: var(--s-12) var(--s-16) !important; font-size: 13.5px; }
-  th { padding: var(--s-12) var(--s-16) !important; }
+  /* Density-driven tables + typography (tokens above; Compact tightens them) */
+  td { padding: var(--cell-py) var(--cell-px) !important; font-size: var(--cell-font); }
+  th { padding: var(--head-py) var(--cell-px) !important; }
   .panel-header { padding: var(--s-16) var(--s-24); font-size: 13.5px; }
-  .panel { margin-bottom: var(--s-64); }
+  .panel { margin-bottom: var(--section-gap); }
   label { font-size: 11px; }
   input, select, textarea { padding: 9px 12px; font-size: 13.5px; }
   .stat-label { font-size: 11.5px; }
